@@ -1,10 +1,12 @@
 # Open Imagine
 
-Open Imagine turns the Gemini coding agent into a live, generative desktop. Every prompt you type in the in-app command box flows to Gemini, which responds by rewriting `frontend/src/components/GeneratedContent.tsx` and instantly refreshing the UI with a retro, draggable-window experience.
+Open Imagine is a generative computer inspired by Claude Imagine and built on top of Gemini CLI. You can talk to the computer to generate any content you want.
+
+This is a proof of concept which will be iterated quickly as the project develops.
 
 ## How It Works
 
-1. You type a request in the browser.
+1. You type a request in the computer (rendered in the browser).
 2. The backend forwards the request—and strict guardrails—to the Gemini CLI bundle.
 3. Gemini edits `GeneratedContent.tsx` (and only that file).
 4. Vite hot-reloads, so the desktop windows morph in real time.
