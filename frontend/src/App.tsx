@@ -157,56 +157,6 @@ function App() {
     });
   }, [openStaticWindow]);
 
-  const handleOpenVideo = useCallback(() => {
-    const placeholderId = 'VIDEO_ID_HERE';
-    openStaticWindow({
-      id: 'desktop-video',
-      title: 'Featured Video',
-      content: (
-        <div>
-          <h3>Featured Video</h3>
-          <p>
-            Drop in your favorite YouTube link by replacing the placeholder ID
-            below.
-          </p>
-          <div
-            style={{
-              position: 'relative',
-              paddingTop: '56.25%',
-              marginTop: 12,
-            }}
-          >
-            <iframe
-              title="Desktop video"
-              src={`https://www.youtube.com/embed/${placeholderId}`}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                border: 0,
-                borderRadius: 8,
-              }}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-            />
-          </div>
-          <p style={{ marginTop: 12 }}>
-            <a
-              href={`https://www.youtube.com/watch?v=${placeholderId}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Open on YouTube
-            </a>
-          </p>
-        </div>
-      ),
-      position: { x: 380, y: 180 },
-    });
-  }, [openStaticWindow]);
-
   const handleCommand = useCallback(
     async (command: string) => {
       console.log('Command received:', command);
@@ -350,7 +300,6 @@ function App() {
         onCloseWindow={handleCloseWindow}
         onOpenMyComputer={handleOpenMyComputer}
         onOpenRecycleBin={handleOpenRecycleBin}
-        onOpenVideo={handleOpenVideo}
       />
 
       <div className="status-bar">
