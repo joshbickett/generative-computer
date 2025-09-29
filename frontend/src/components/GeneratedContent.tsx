@@ -27,7 +27,7 @@ export default function GeneratedContent() {
           <li>Type your request in the input box below</li>
           <li>The AI agent will modify this interface</li>
           <li>Everything will be rendered as todo lists initially</li>
-          <li>New windows appear on the desktop (coming soon)</li>d co
+          <li>New windows appear on the desktop (coming soon)</li>
         </ul>
       </div>
     </div>
