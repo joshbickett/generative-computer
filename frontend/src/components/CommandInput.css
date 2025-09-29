@@ -1,0 +1,55 @@
+.command-input-container {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  z-index: 1000;
+  width: 90%;
+  max-width: 600px;
+}
+
+.command-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.command-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.command-input:focus {
+  border-color: #4285f4;
+}
+
+.command-submit {
+  padding: 12px 24px;
+  background: #4285f4;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.command-submit:hover {
+  background: #357ae8;
+}
+
+.command-hint {
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+}
