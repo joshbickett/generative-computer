@@ -3,6 +3,7 @@
 Open Imagine is a generative computer inspired by Claude Imagine and built on top of Gemini CLI. You can talk to the computer to generate any content you want.
 
 This is a proof of concept which will be iterated quickly as the project develops.
+![Open Imagine desktop](./screenshot.png)
 
 ## How It Works
 
