@@ -4,37 +4,55 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import type { ReactNode } from 'react';
 import Window from './Window';
 import './Desktop.css';
 
 export interface WindowData {
   id: string;
   title: string;
-  content: React.ReactNode;
+  content: ReactNode;
   position?: { x: number; y: number };
 }
 
 interface DesktopProps {
   windows: WindowData[];
   onCloseWindow: (id: string) => void;
+  onOpenMyComputer: () => void;
+  onOpenRecycleBin: () => void;
+  onOpenVideo: () => void;
 }
 
-export default function Desktop({ windows, onCloseWindow }: DesktopProps) {
+export default function Desktop({
+  windows,
+  onCloseWindow,
+  onOpenMyComputer,
+  onOpenRecycleBin,
+  onOpenVideo,
+}: DesktopProps) {
   return (
     <div className="desktop">
       <div className="desktop-icons">
-        <div className="desktop-icon">
+        <button
+          type="button"
+          className="desktop-icon"
+          onClick={onOpenMyComputer}
+        >
           <div className="icon-image">📁</div>
           <div className="icon-label">My Computer</div>
-        </div>
-        <div className="desktop-icon">
+        </button>
+        <button
+          type="button"
+          className="desktop-icon"
+          onClick={onOpenRecycleBin}
+        >
           <div className="icon-image">🗑️</div>
           <div className="icon-label">Recycle Bin</div>
-        </div>
-        <div className="desktop-icon">
-          <div className="icon-image">📄</div>
-          <div className="icon-label">Documents</div>
-        </div>
+        </button>
+        <button type="button" className="desktop-icon" onClick={onOpenVideo}>
+          <div className="icon-image">🎬</div>
+          <div className="icon-label">Video</div>
+        </button>
       </div>
 
       {windows.map((window, index) => (

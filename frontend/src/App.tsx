@@ -119,6 +119,94 @@ function App() {
     setWindows((prev) => prev.filter((window) => window.id !== id));
   }, []);
 
+  const openStaticWindow = useCallback((window: WindowData) => {
+    setWindows((prev) => {
+      const withoutExisting = prev.filter((item) => item.id !== window.id);
+      return [...withoutExisting, window];
+    });
+  }, []);
+
+  const handleOpenMyComputer = useCallback(() => {
+    openStaticWindow({
+      id: 'my-computer',
+      title: 'My Computer',
+      content: (
+        <div>
+          <h3>Coming Soon</h3>
+          <p>
+            We&apos;re wiring up system shortcuts and folders. Check back later
+            for a fully interactive explorer!
+          </p>
+        </div>
+      ),
+      position: { x: 260, y: 160 },
+    });
+  }, [openStaticWindow]);
+
+  const handleOpenRecycleBin = useCallback(() => {
+    openStaticWindow({
+      id: 'recycle-bin',
+      title: 'Recycle Bin',
+      content: (
+        <div>
+          <h3>Recycle Bin</h3>
+          <p>Nothing in here yet. Clean as a whistle!</p>
+        </div>
+      ),
+      position: { x: 320, y: 220 },
+    });
+  }, [openStaticWindow]);
+
+  const handleOpenVideo = useCallback(() => {
+    const placeholderId = 'VIDEO_ID_HERE';
+    openStaticWindow({
+      id: 'desktop-video',
+      title: 'Featured Video',
+      content: (
+        <div>
+          <h3>Featured Video</h3>
+          <p>
+            Drop in your favorite YouTube link by replacing the placeholder ID
+            below.
+          </p>
+          <div
+            style={{
+              position: 'relative',
+              paddingTop: '56.25%',
+              marginTop: 12,
+            }}
+          >
+            <iframe
+              title="Desktop video"
+              src={`https://www.youtube.com/embed/${placeholderId}`}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                border: 0,
+                borderRadius: 8,
+              }}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+            />
+          </div>
+          <p style={{ marginTop: 12 }}>
+            <a
+              href={`https://www.youtube.com/watch?v=${placeholderId}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open on YouTube
+            </a>
+          </p>
+        </div>
+      ),
+      position: { x: 380, y: 180 },
+    });
+  }, [openStaticWindow]);
+
   const handleCommand = useCallback(
     async (command: string) => {
       console.log('Command received:', command);
@@ -257,7 +345,13 @@ function App() {
 
   return (
     <div className="App">
-      <Desktop windows={windows} onCloseWindow={handleCloseWindow} />
+      <Desktop
+        windows={windows}
+        onCloseWindow={handleCloseWindow}
+        onOpenMyComputer={handleOpenMyComputer}
+        onOpenRecycleBin={handleOpenRecycleBin}
+        onOpenVideo={handleOpenVideo}
+      />
 
       <div className="status-bar">
         <span
