@@ -1,18 +1,31 @@
+/**
+ * @license
+ * Copyright 2025 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { useState } from 'react';
 import './CommandInput.css';
 
 interface CommandInputProps {
-  onSubmit: (command: string) => void;
+  onSubmit: (command: string) => Promise<void> | void;
+  isLoading: boolean;
+  statusMessage: string;
 }
 
-export default function CommandInput({ onSubmit }: CommandInputProps) {
+export default function CommandInput({
+  onSubmit,
+  isLoading,
+  statusMessage,
+}: CommandInputProps) {
   const [command, setCommand] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (command.trim()) {
-      onSubmit(command);
+      const value = command.trim();
       setCommand('');
+      await Promise.resolve(onSubmit(value));
     }
   };
 
@@ -26,14 +39,13 @@ export default function CommandInput({ onSubmit }: CommandInputProps) {
           placeholder="Type a command... (e.g., 'Create a todo list')"
           className="command-input"
           autoFocus
+          disabled={isLoading}
         />
-        <button type="submit" className="command-submit">
-          Send
+        <button type="submit" className="command-submit" disabled={isLoading}>
+          {isLoading ? 'Thinking...' : 'Send'}
         </button>
       </form>
-      <div className="command-hint">
-        💡 This input will send your request to the Gemini agent
-      </div>
+      <div className="command-hint">{statusMessage}</div>
     </div>
   );
 }

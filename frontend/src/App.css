@@ -49,3 +49,77 @@ body, html {
 .generated-content li {
   margin-bottom: 6px;
 }
+
+.status-bar {
+  position: fixed;
+  bottom: 110px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(25, 30, 50, 0.7);
+  color: #f6f7ff;
+  box-shadow: 0 12px 32px rgba(10, 15, 45, 0.35);
+  backdrop-filter: blur(14px);
+  z-index: 950;
+  max-width: 90vw;
+}
+
+.status-pill {
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  background: rgba(255, 255, 255, 0.12);
+  color: inherit;
+  white-space: nowrap;
+}
+
+.status-pill.success {
+  background: rgba(73, 199, 129, 0.2);
+  color: #b8ffd6;
+}
+
+.status-pill.warning {
+  background: rgba(255, 214, 102, 0.2);
+  color: #ffe8a1;
+}
+
+.status-pill.danger {
+  background: rgba(255, 120, 120, 0.25);
+  color: #ffd4d4;
+}
+
+.status-message {
+  width: 100%;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.status-message.pending {
+  color: #ffe8a1;
+}
+
+.status-message.success {
+  color: #c7ffdb;
+}
+
+.status-message.warning {
+  color: #ffe8a1;
+}
+
+.status-message.error {
+  color: #ffd4d4;
+}
+
+.status-message.info {
+  color: #dbe6ff;
+}

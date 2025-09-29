@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright 2025 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { useState, useRef, useEffect } from 'react';
 import './Window.css';
 
@@ -9,7 +15,13 @@ export interface WindowProps {
   initialPosition?: { x: number; y: number };
 }
 
-export default function Window({ id, title, children, onClose, initialPosition = { x: 100, y: 100 } }: WindowProps) {
+export default function Window({
+  id,
+  title,
+  children,
+  onClose,
+  initialPosition = { x: 100, y: 100 },
+}: WindowProps) {
   const [position, setPosition] = useState(initialPosition);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -21,7 +33,7 @@ export default function Window({ id, title, children, onClose, initialPosition =
     const rect = windowRef.current.getBoundingClientRect();
     setDragOffset({
       x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+      y: e.clientY - rect.top,
     });
     setIsDragging(true);
   };
@@ -32,7 +44,7 @@ export default function Window({ id, title, children, onClose, initialPosition =
 
       setPosition({
         x: e.clientX - dragOffset.x,
-        y: e.clientY - dragOffset.y
+        y: e.clientY - dragOffset.y,
       });
     };
 
@@ -59,7 +71,7 @@ export default function Window({ id, title, children, onClose, initialPosition =
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
-        cursor: isDragging ? 'grabbing' : 'default'
+        cursor: isDragging ? 'grabbing' : 'default',
       }}
     >
       <div
@@ -72,9 +84,7 @@ export default function Window({ id, title, children, onClose, initialPosition =
           ×
         </button>
       </div>
-      <div className="window-content">
-        {children}
-      </div>
+      <div className="window-content">{children}</div>
     </div>
   );
 }

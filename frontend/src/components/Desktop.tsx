@@ -1,3 +1,9 @@
+/**
+ * @license
+ * Copyright 2025 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import Window from './Window';
 import './Desktop.css';
 
@@ -37,10 +43,12 @@ export default function Desktop({ windows, onCloseWindow }: DesktopProps) {
           id={window.id}
           title={window.title}
           onClose={() => onCloseWindow(window.id)}
-          initialPosition={window.position || {
-            x: 100 + (index * 30),
-            y: 100 + (index * 30)
-          }}
+          initialPosition={
+            window.position || {
+              x: 100 + index * 30,
+              y: 100 + index * 30,
+            }
+          }
         >
           {window.content}
         </Window>

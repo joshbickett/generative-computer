@@ -1,72 +1,297 @@
-import { useState } from 'react';
+/**
+ * @license
+ * Copyright 2025 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Desktop from './components/Desktop';
 import type { WindowData } from './components/Desktop';
 import CommandInput from './components/CommandInput';
 import GeneratedContent from './components/GeneratedContent';
 import './App.css';
 
+const API_BASE_URL = 'http://localhost:3001';
+
+type AgentMode =
+  | 'REAL'
+  | 'SIMULATED'
+  | 'SIMULATED_FALLBACK'
+  | 'PENDING'
+  | 'ERROR'
+  | 'UNKNOWN';
+
+interface AgentStatus {
+  loading: boolean;
+  authenticated: boolean;
+  agentMode: AgentMode;
+  authError: string | null;
+  debugEnabled?: boolean;
+}
+
+interface AgentActivity {
+  command: string;
+  message: string;
+  mode: AgentMode;
+  error?: string | null;
+  debugLogPath?: string | null;
+  timestamp: number;
+}
+
+function truncate(text: string, max = 60) {
+  return text.length > max ? `${text.slice(0, max)}...` : text;
+}
+
 function App() {
   const [windows, setWindows] = useState<WindowData[]>([
     {
       id: 'welcome',
       title: 'Welcome to Open Imagine',
-      content: <GeneratedContent />
-    }
+      content: <GeneratedContent />,
+    },
   ]);
+  const [agentStatus, setAgentStatus] = useState<AgentStatus>({
+    loading: true,
+    authenticated: false,
+    agentMode: 'UNKNOWN',
+    authError: null,
+    debugEnabled: false,
+  });
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [pendingCommand, setPendingCommand] = useState<string | null>(null);
+  const [lastActivity, setLastActivity] = useState<AgentActivity | null>(null);
 
-  const handleCommand = async (command: string) => {
-    console.log('Command received:', command);
-
-    // Send command to backend
+  const refreshStatus = useCallback(async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/command', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ command }),
-      });
-
+      const response = await fetch(`${API_BASE_URL}/api/status`);
+      if (!response.ok) {
+        throw new Error(`Status request failed with code ${response.status}`);
+      }
       const data = await response.json();
-      console.log('Response from backend:', data);
 
-      // The agent will modify the GeneratedContent.tsx file
-      // which will trigger a hot reload
-
+      setAgentStatus({
+        loading: false,
+        authenticated: Boolean(data.authenticated),
+        agentMode: (data.agentMode as AgentMode) ?? 'UNKNOWN',
+        authError: data.authError ?? null,
+        debugEnabled: Boolean(data.debugEnabled),
+      });
     } catch (error) {
-      console.error('Error sending command:', error);
-      // For now, create a placeholder window
-      createTodoWindow(command);
+      console.error('Unable to fetch agent status:', error);
+      setAgentStatus((prev) => ({
+        loading: false,
+        authenticated: false,
+        agentMode: prev.agentMode === 'REAL' ? 'REAL' : 'UNKNOWN',
+        authError:
+          'Backend status unavailable. Ensure the backend is running on port 3001.',
+        debugEnabled: prev.debugEnabled,
+      }));
     }
-  };
+  }, []);
 
-  const createTodoWindow = (request: string) => {
+  useEffect(() => {
+    refreshStatus();
+    const interval = setInterval(refreshStatus, 30000);
+    return () => clearInterval(interval);
+  }, [refreshStatus]);
+
+  const createTodoWindow = useCallback((request: string) => {
     const newWindow: WindowData = {
       id: `window-${Date.now()}`,
-      title: `Todo: ${request.substring(0, 30)}...`,
+      title: `Todo: ${truncate(request, 24)}`,
       content: (
         <div>
           <h3>Todo List</h3>
           <p>Request: {request}</p>
           <ul>
-            <li>✅ Task 1</li>
-            <li>⬜ Task 2</li>
-            <li>⬜ Task 3</li>
+            <li>✅ Define the outcome</li>
+            <li>⬜ Break tasks into steps</li>
+            <li>⬜ Prioritize next actions</li>
           </ul>
         </div>
-      )
+      ),
     };
-    setWindows([...windows, newWindow]);
-  };
 
-  const handleCloseWindow = (id: string) => {
-    setWindows(windows.filter(w => w.id !== id));
-  };
+    setWindows((prev) => [...prev, newWindow]);
+  }, []);
+
+  const handleCloseWindow = useCallback((id: string) => {
+    setWindows((prev) => prev.filter((window) => window.id !== id));
+  }, []);
+
+  const handleCommand = useCallback(
+    async (command: string) => {
+      console.log('Command received:', command);
+      setIsProcessing(true);
+      setPendingCommand(command);
+      setLastActivity({
+        command,
+        message: 'Waiting for Gemini agent...',
+        mode: 'PENDING',
+        timestamp: Date.now(),
+      });
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/command`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ command }),
+        });
+
+        const data = await response.json();
+        console.log('Response from backend:', data);
+
+        if (!response.ok || data.success === false) {
+          throw new Error(data.error || 'Agent request failed');
+        }
+
+        const mode =
+          (data.mode as AgentMode) ?? agentStatus.agentMode ?? 'UNKNOWN';
+
+        setLastActivity({
+          command,
+          message: data.message || 'Command processed.',
+          mode,
+          error: data.error ?? null,
+          debugLogPath: data.debugLogPath ?? null,
+          timestamp: Date.now(),
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error('Error sending command:', error);
+        setLastActivity({
+          command,
+          message: 'Agent request failed',
+          mode: 'ERROR',
+          error: message,
+          debugLogPath:
+            error instanceof Error && 'debugLogPath' in error
+              ? ((error as Error & { debugLogPath?: string }).debugLogPath ??
+                null)
+              : null,
+          timestamp: Date.now(),
+        });
+        createTodoWindow(command);
+      } finally {
+        setIsProcessing(false);
+        setPendingCommand(null);
+        refreshStatus();
+      }
+    },
+    [agentStatus.agentMode, createTodoWindow, refreshStatus],
+  );
+
+  const commandHint = useMemo(() => {
+    if (agentStatus.loading) {
+      return '💡 Checking Gemini agent status...';
+    }
+
+    if (!agentStatus.authenticated) {
+      return '⚠️ Gemini CLI is not authenticated. Run `npm start`, complete login, then relaunch `./start.sh`.';
+    }
+
+    if (isProcessing && pendingCommand) {
+      return `⏳ Gemini agent is working on: "${truncate(pendingCommand, 36)}"`;
+    }
+
+    if (agentStatus.agentMode === 'REAL') {
+      return '💡 Ask for anything! The real Gemini agent can craft todo lists, ASCII panels, or other creative desktop widgets.';
+    }
+
+    if (agentStatus.agentMode === 'SIMULATED') {
+      return 'ℹ️ Simulator mode is active. Authenticate Gemini CLI to enable the real agent.';
+    }
+
+    return '💡 This input sends your request to the Gemini agent.';
+  }, [agentStatus, isProcessing, pendingCommand]);
+
+  const statusBarMessage = useMemo(() => {
+    if (isProcessing && pendingCommand) {
+      return {
+        text: `Processing "${truncate(pendingCommand, 42)}"`,
+        tone: 'pending' as const,
+      };
+    }
+
+    if (lastActivity) {
+      if (lastActivity.error) {
+        const tail = lastActivity.debugLogPath
+          ? ` (log: ${lastActivity.debugLogPath})`
+          : '';
+        return {
+          text: `Last error: ${lastActivity.error}${tail}`,
+          tone: 'error' as const,
+        };
+      }
+
+      if (lastActivity.debugLogPath) {
+        return {
+          text: `${lastActivity.message} (log: ${lastActivity.debugLogPath})`,
+          tone:
+            lastActivity.mode === 'REAL'
+              ? 'success'
+              : lastActivity.mode === 'SIMULATED_FALLBACK'
+                ? 'warning'
+                : 'info',
+        };
+      }
+
+      return {
+        text: lastActivity.message,
+        tone:
+          lastActivity.mode === 'REAL'
+            ? 'success'
+            : lastActivity.mode === 'SIMULATED_FALLBACK'
+              ? 'warning'
+              : 'info',
+      };
+    }
+
+    return {
+      text: 'Ready for your first command.',
+      tone: 'info' as const,
+    };
+  }, [isProcessing, lastActivity, pendingCommand]);
 
   return (
     <div className="App">
       <Desktop windows={windows} onCloseWindow={handleCloseWindow} />
-      <CommandInput onSubmit={handleCommand} />
+
+      <div className="status-bar">
+        <span
+          className={`status-pill ${agentStatus.agentMode === 'REAL' ? 'success' : 'warning'}`}
+        >
+          {agentStatus.agentMode === 'REAL'
+            ? 'Real agent connected'
+            : agentStatus.agentMode === 'SIMULATED'
+              ? 'Simulator mode'
+              : 'Agent status unknown'}
+        </span>
+        <span
+          className={`status-pill ${agentStatus.authenticated ? 'success' : 'warning'}`}
+        >
+          {agentStatus.authenticated ? 'Authenticated' : 'Login required'}
+        </span>
+        {agentStatus.debugEnabled && (
+          <span className="status-pill success">Debug logs enabled</span>
+        )}
+        <span className={`status-message ${statusBarMessage.tone}`}>
+          {statusBarMessage.text}
+        </span>
+        {agentStatus.authError && (
+          <span className="status-message warning">
+            {agentStatus.authError}
+          </span>
+        )}
+      </div>
+
+      <CommandInput
+        onSubmit={handleCommand}
+        isLoading={isProcessing}
+        statusMessage={commandHint}
+      />
     </div>
   );
 }

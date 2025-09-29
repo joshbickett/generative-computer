@@ -178,6 +178,12 @@ export default tseslint.config(
       'license-header': licenseHeader,
       import: importPlugin,
     },
+    languageOptions: {
+      globals: {
+        ...globals.node,
+        ...globals.es2021,
+      },
+    },
     rules: {
       'license-header/header': [
         'error',

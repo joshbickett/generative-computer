@@ -1,9 +1,18 @@
+/**
+ * @license
+ * Copyright 2025 Google LLC
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* eslint-env node */
+
 import express from 'express';
 import cors from 'cors';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import fs from 'fs/promises';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { invokeGeminiAgent, getGeneratedContentPath } from './gemini-agent.js';
+import { generateSmartTodoList } from './smart-simulator.js';
+import { checkGeminiAuth } from './check-auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -21,6 +30,9 @@ const GENERATED_CONTENT_PATH = getGeneratedContentPath();
 // Toggle between simulation and real agent
 const USE_REAL_AGENT = process.env.USE_REAL_AGENT === 'true';
 
+// Store authentication status
+let authStatus = null;
+
 app.post('/api/command', async (req, res) => {
   const { command } = req.body;
 
@@ -29,83 +41,124 @@ app.post('/api/command', async (req, res) => {
   try {
     if (USE_REAL_AGENT) {
       console.log('🤖 Using real Gemini agent');
-      const result = await invokeGeminiAgent(command);
-      res.json({
-        success: true,
-        message: 'Command processed by Gemini agent',
-        command,
-        result
-      });
-    } else {
-      console.log('🎭 Using simulated agent (set USE_REAL_AGENT=true to use real Gemini)');
-      await simulateAgentResponse(command);
-      res.json({
-        success: true,
-        message: 'Command processed successfully (simulated)',
-        command
-      });
+      try {
+        const result = await invokeGeminiAgent(command);
+        res.json({
+          success: true,
+          message: 'Command processed by Gemini agent',
+          command,
+          mode: 'REAL',
+          result,
+        });
+        return;
+      } catch (agentError) {
+        console.error(
+          'Gemini agent failed, attempting fallback...',
+          agentError,
+        );
+
+        try {
+          const fallback = await simulateAgentResponse(command);
+          res.json({
+            success: true,
+            message: 'Fallback to simulated agent (real agent error)',
+            command,
+            mode: 'SIMULATED_FALLBACK',
+            fallback,
+            error: agentError.message,
+            debugLogPath: agentError.debugLogPath || null,
+          });
+          return;
+        } catch (fallbackError) {
+          console.error('Fallback simulator also failed:', fallbackError);
+          res.status(500).json({
+            success: false,
+            error: agentError.message,
+            fallbackError: fallbackError.message,
+            debugLogPath: agentError.debugLogPath || null,
+          });
+          return;
+        }
+      }
     }
 
+    console.log(
+      '🎭 Using simulated agent (set USE_REAL_AGENT=true to use real Gemini)',
+    );
+    const simulated = await simulateAgentResponse(command);
+    res.json({
+      success: true,
+      message: 'Command processed successfully (simulated)',
+      command,
+      mode: 'SIMULATED',
+      simulated,
+    });
   } catch (error) {
     console.error('Error processing command:', error);
     res.status(500).json({
       success: false,
-      error: error.message
+      error: error.message,
     });
   }
 });
 
 async function simulateAgentResponse(command) {
-  // This is a placeholder that simulates what the Gemini agent would do
-  // In the real implementation, this would invoke the Gemini CLI with the appropriate prompt
-
-  const todoContent = `// THIS FILE IS MODIFIED BY THE GEMINI AGENT
-// The agent will write dynamic content here based on user commands
-
-export default function GeneratedContent() {
-  return (
-    <div className="generated-content">
-      <h2>📝 Todo List: ${command}</h2>
-      <p>Generated from your request: "${command}"</p>
-
-      <div style={{ marginTop: '20px', padding: '16px', background: '#f5f5f5', borderRadius: '8px' }}>
-        <h3>✅ Tasks to Complete</h3>
-        <ul>
-          <li>✅ Understand the request</li>
-          <li>⬜ Break down into steps</li>
-          <li>⬜ Implement the solution</li>
-          <li>⬜ Test and verify</li>
-          <li>⬜ Document the results</li>
-        </ul>
-      </div>
-
-      <div style={{ marginTop: '16px', padding: '12px', background: '#e3f2fd', borderRadius: '8px' }}>
-        <p><strong>💡 Tip:</strong> The agent is converting everything into todo lists!</p>
-        <p>This is just a proof of concept. The real agent will create much more sophisticated content.</p>
-      </div>
-    </div>
-  );
-}`;
-
-  await fs.writeFile(GENERATED_CONTENT_PATH, todoContent, 'utf-8');
-  console.log('Updated GeneratedContent.tsx');
+  console.log('🎨 Generating smart todo list...');
+  const result = await generateSmartTodoList(command, GENERATED_CONTENT_PATH);
+  console.log(`✅ Updated GeneratedContent.tsx with: ${result.title}`);
+  return result;
 }
 
 app.get('/api/status', (req, res) => {
   res.json({
     status: 'running',
     frontendDir: FRONTEND_DIR,
-    generatedContentPath: GENERATED_CONTENT_PATH
+    generatedContentPath: GENERATED_CONTENT_PATH,
+    authenticated: authStatus?.authenticated || false,
+    agentMode: USE_REAL_AGENT ? 'REAL' : 'SIMULATED',
+    authError: authStatus?.error || null,
+    debugEnabled: process.env.DEBUG_AGENT === 'true',
   });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 Open Imagine Backend running on http://localhost:${PORT}`);
   console.log(`📁 Frontend directory: ${FRONTEND_DIR}`);
   console.log(`📝 Generated content path: ${GENERATED_CONTENT_PATH}`);
   console.log(`🤖 Agent mode: ${USE_REAL_AGENT ? 'REAL Gemini' : 'SIMULATED'}`);
   console.log('');
-  console.log('Ready to receive commands from the frontend!');
-  console.log('');
-  console.log('To use the real Gemini agent, restart with: USE_REAL_AGENT=true npm start');
+
+  // Check authentication if using real agent
+  if (USE_REAL_AGENT) {
+    authStatus = await checkGeminiAuth();
+
+    if (authStatus.authenticated) {
+      console.log('✅ Gemini CLI is authenticated and ready!');
+      console.log('');
+      console.log('Ready to receive commands from the frontend!');
+    } else {
+      console.log('❌ Gemini CLI authentication failed!');
+      console.log(`   Error: ${authStatus.error}`);
+      if (authStatus.details) {
+        console.log(`   Details: ${authStatus.details}`);
+      }
+      console.log('');
+      console.log('📋 To authenticate:');
+      console.log('   1. Open a new terminal');
+      console.log('   2. cd /Users/josh/Documents/software/repos/open-imagine');
+      console.log('   3. Run: npm start');
+      console.log(
+        '   4. Choose "Login with Google" and complete authentication',
+      );
+      console.log('   5. Restart this backend server');
+      console.log('');
+      console.log('⚠️  Falling back to SIMULATED mode for now...');
+    }
+  } else {
+    console.log('Ready to receive commands from the frontend!');
+    console.log('');
+    console.log(
+      'To use the real Gemini agent, restart with: USE_REAL_AGENT=true npm start',
+    );
+  }
 });
