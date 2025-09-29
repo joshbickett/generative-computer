@@ -49,24 +49,6 @@ Press `Ctrl+C` to shut everything down.
 
 - `DEBUG_AGENT=true ./start.sh` — surface Gemini stdout/stderr and write transcripts to `logs/agent/`
 
-## Manual Dev Workflow
-
-Prefer to drive each service yourself? Use this sequence (after the first-time setup above):
-
-```bash
-# Frontend
-cd frontend
-npm install        # only needed once per clone
-npm run dev        # serves http://localhost:5173
-
-# Backend (separate terminal)
-cd backend
-npm install        # only needed once per clone
-USE_REAL_AGENT=true npm start   # omit the flag to stay in simulator mode
-```
-
-Running without `USE_REAL_AGENT` keeps everything local by using the smart simulator that renders playful todo windows without calling Gemini.
-
 ## Project Structure
 
 ```
