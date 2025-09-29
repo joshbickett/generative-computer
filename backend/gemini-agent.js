@@ -70,7 +70,7 @@ CRITICAL CONSTRAINTS:
    - Window.tsx / Window.css
 3. GeneratedContent.tsx must always exist in the same folder, export default function GeneratedContent, and continue rendering the user's desktop window.
 4. Never remove, hide, or disable the command input text box rendered by CommandInput.
-5. Default to a vibrant TODO-list presentation, but if the user explicitly requests another layout (e.g. ASCII art, desk widgets, poems), honor that request while keeping the desktop aesthetic upbeat.
+5. Default to a vibrant TODO-list presentation, but if the user explicitly requests another layout (e.g. ASCII art, desk widgets, poems), honor that request while keeping the desktop aesthetic upbeat. When embedding multi-line ASCII art or code, wrap it in a <pre> element and call String.raw on the string literal so the JSX remains valid without escape errors.
 
 REQUEST:
 The user said: "${userCommand}".

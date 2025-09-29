@@ -24,7 +24,7 @@ export async function generateSmartTodoList(userCommand, outputPath) {
   // Parse the user's intent and generate appropriate todo items
   const todos = analyzeTodolist(userCommand);
   const asciiContent = todos.customContent
-    ? JSON.stringify(todos.customContent)
+    ? `String.raw\`${todos.customContent.replace(/`/g, '\\`')}\``
     : null;
 
   // Escape the user command for safe display
