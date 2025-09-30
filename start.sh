@@ -2,6 +2,35 @@
 
 set -e
 
+AUTH_FILES=(
+    "$HOME/.gemini/oauth_creds.json"
+    "$HOME/.gemini/google_accounts.json"
+    "$HOME/.gemini/api_keys.json"
+    "$HOME/.config/gemini/oauth_creds.json"
+    "$HOME/.config/gemini/google_accounts.json"
+    "$HOME/.config/gemini/api_keys.json"
+)
+
+if [[ "${1:-}" == "logout" ]]; then
+    echo "🔐 Clearing Gemini CLI authentication..."
+    LOGOUT_REMOVED=false
+    for path in "${AUTH_FILES[@]}"; do
+        if [ -f "$path" ]; then
+            rm -f "$path"
+            LOGOUT_REMOVED=true
+            echo "   Removed $path"
+        fi
+    done
+
+    if [ "$LOGOUT_REMOVED" = "true" ]; then
+        echo ""
+        echo "✅ Gemini CLI credentials removed. Run ./computer to re-authenticate."
+    else
+        echo "ℹ️  No Gemini CLI credentials found to remove."
+    fi
+    exit 0
+fi
+
 echo "🚀 Starting Generative Computer..."
 echo ""
 
@@ -55,15 +84,6 @@ free_port() {
 
 # Check Gemini authentication by looking for known credential files
 echo "🔐 Checking Gemini CLI authentication..."
-
-AUTH_FILES=(
-    "$HOME/.gemini/oauth_creds.json"
-    "$HOME/.gemini/google_accounts.json"
-    "$HOME/.gemini/api_keys.json"
-    "$HOME/.config/gemini/oauth_creds.json"
-    "$HOME/.config/gemini/google_accounts.json"
-    "$HOME/.config/gemini/api_keys.json"
-)
 
 AUTHENTICATED=false
 for path in "${AUTH_FILES[@]}"; do
