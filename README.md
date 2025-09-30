@@ -8,7 +8,7 @@ This is a proof of concept which will be iterated quickly as the project develop
 
 ## How It Works
 
-A generative computer runs a terminal agent on the backend that writes to a generated frontend in a loop.
+A generative computer runs a terminal agent on the backend that writes to a generated frontend in a loop based on the user's request.
 
 1. You type a request in the computer (rendered in the browser).
 2. The backend forwards the request to the Gemini agent.
