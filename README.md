@@ -24,6 +24,8 @@ This is a proof of concept which will be iterated quickly as the project develop
 Do this once on a fresh clone:
 
 ```bash
+git clone https://github.com/joshbickett/generative-computer
+cd generative-computer
 npm install          # install repo + CLI dependencies
 npm run build        # create bundle/gemini.js used by the agent
 npm start            # launch Gemini CLI to authenticate (Login with Google, etc.)
