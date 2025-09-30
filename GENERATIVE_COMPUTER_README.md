@@ -1,8 +1,8 @@
-# 🎨 Open Imagine
+# 🎨 Generative Computer
 
 **A generative computer interface powered by Gemini AI**
 
-Open Imagine is a revolutionary coding agent that creates a feedback loop between an AI agent and a live React frontend. The user types commands in the browser, and the Gemini agent rewrites the UI in real-time, creating a truly generative computing experience.
+Generative Computer is a revolutionary coding agent that creates a feedback loop between an AI agent and a live React frontend. The user types commands in the browser, and the Gemini agent rewrites the UI in real-time, creating a truly generative computing experience.
 
 ## 🌟 Concept
 
@@ -58,11 +58,13 @@ Everything is rendered as **todo lists** initially, creating a unique constraint
 ### Installation & Running
 
 1. **Clone and navigate to the repo:**
+
    ```bash
    cd open-imagine
    ```
 
 2. **Run the startup script:**
+
    ```bash
    ./start.sh
    ```
@@ -150,6 +152,7 @@ open-imagine/
 ## 🛡️ Safety & Constraints
 
 The Gemini agent is constrained to:
+
 - ✅ Only modify `GeneratedContent.tsx`
 - ✅ Keep the component structure intact
 - ✅ Never touch protected components (CommandInput, Desktop, Window)
@@ -158,11 +161,13 @@ The Gemini agent is constrained to:
 ## 🎭 Modes
 
 ### Simulated Mode (Default)
+
 - Fast testing without invoking real Gemini CLI
 - Creates placeholder todo lists
 - Good for UI development
 
 ### Real Agent Mode
+
 - Invokes actual Gemini CLI
 - Generates sophisticated, contextual content
 - Requires valid Gemini API access
@@ -180,6 +185,7 @@ The Gemini agent is constrained to:
 ## 📝 Notes
 
 This is a **proof of concept** designed to showcase the potential of AI-driven generative UIs. It's meant to be:
+
 - Fun to demo
 - Easy to understand
 - Visually compelling

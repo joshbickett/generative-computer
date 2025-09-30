@@ -46,7 +46,7 @@ function App() {
   const [windows, setWindows] = useState<WindowData[]>([
     {
       id: 'welcome',
-      title: 'Welcome to Open Imagine',
+      title: 'Welcome to Generative Computer',
       content: <GeneratedContent />,
     },
   ]);

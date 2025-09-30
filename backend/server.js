@@ -122,7 +122,9 @@ app.get('/api/status', (req, res) => {
 });
 
 app.listen(PORT, async () => {
-  console.log(`🚀 Open Imagine Backend running on http://localhost:${PORT}`);
+  console.log(
+    `🚀 Generative Computer Backend running on http://localhost:${PORT}`,
+  );
   console.log(`📁 Frontend directory: ${FRONTEND_DIR}`);
   console.log(`📝 Generated content path: ${GENERATED_CONTENT_PATH}`);
   console.log(`🤖 Agent mode: ${USE_REAL_AGENT ? 'REAL Gemini' : 'SIMULATED'}`);

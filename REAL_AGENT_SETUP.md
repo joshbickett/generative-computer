@@ -1,6 +1,6 @@
 # Setting Up the Real Gemini Agent
 
-Currently, Open Imagine uses a **smart simulator** that generates contextual todo lists based on your requests. This works immediately without any setup.
+Currently, Generative Computer uses a **smart simulator** that generates contextual todo lists based on your requests. This works immediately without any setup.
 
 To use the **REAL Gemini CLI agent** that actually thinks and writes code, you need to set up authentication first.
 

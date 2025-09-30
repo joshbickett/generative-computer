@@ -2,7 +2,7 @@
 
 set -e
 
-echo "🚀 Starting Open Imagine..."
+echo "🚀 Starting Generative Computer..."
 echo ""
 
 # Check if we're in the right directory
@@ -23,7 +23,7 @@ fi
 # Function to cleanup on exit
 cleanup() {
     echo ""
-    echo "🛑 Shutting down Open Imagine..."
+    echo "🛑 Shutting down Generative Computer..."
     kill $(jobs -p) 2>/dev/null
     exit
 }
@@ -118,7 +118,7 @@ fi
 echo ""
 echo "✅ Dependencies ready!"
 echo ""
-echo "🚀 Starting Open Imagine with REAL Gemini agent..."
+echo "🚀 Starting Generative Computer with REAL Gemini agent..."
 echo ""
 
 # Ensure ports are available
@@ -144,7 +144,7 @@ cd frontend && npm run dev &
 sleep 2
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "✅ Open Imagine is running!"
+echo "✅ Generative Computer is running!"
 echo ""
 echo "   👉 Open your browser to: http://localhost:5173"
 echo ""

@@ -60,7 +60,7 @@ export async function invokeGeminiAgent(userCommand) {
   console.log('🤖 Invoking Gemini agent...');
   console.log('📝 User command:', userCommand);
 
-  const systemPrompt = `You are an AI coding agent helping power the "Open Imagine" React experience.
+  const systemPrompt = `You are an AI coding agent helping power the "Generative Computer" React experience.
 
 CRITICAL CONSTRAINTS:
 1. You can ONLY modify files under: ${COMPONENTS_DIR}
