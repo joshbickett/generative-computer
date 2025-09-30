@@ -8,9 +8,11 @@ This is a proof of concept which will be iterated quickly as the project develop
 
 ## How It Works
 
+A generative computer runs a terminal agent on the backend that writes to a generated frontend in a loop.
+
 1. You type a request in the computer (rendered in the browser).
-2. The backend forwards the request—and strict guardrails—to the Gemini CLI bundle.
-3. Gemini edits `GeneratedContent.tsx` (and only that file).
+2. The backend forwards the request to the Gemini agent.
+3. Gemini edits `GeneratedContent.tsx` (and only that file right now).
 4. Vite hot-reloads, so the desktop windows morph in real time.
 
 ## System Requirements
