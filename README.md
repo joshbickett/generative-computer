@@ -1,6 +1,6 @@
 # Generative Computer
 
-![Generative Computer desktop](./screenshot.png)
+![Generative Computer in action](./generative-computer-demo.gif)
 
 Generative Computer is an interactive desktop inspired by Claude Imagine and built on top of Gemini CLI. You can talk to the computer to generate any content you want.
 
