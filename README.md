@@ -21,22 +21,22 @@ This is a proof of concept which will be iterated quickly as the project develop
 
 ## First-Time Setup
 
-Do this once on a fresh clone:
+Clone and boot the desktop:
 
 ```bash
 git clone https://github.com/joshbickett/generative-computer
 cd generative-computer
-npm install          # install repo + CLI dependencies
-npm run build        # create bundle/gemini.js used by the agent
-npm start            # launch Gemini CLI to authenticate (Login with Google, etc.)
+./computer
 ```
 
-After `npm start` completes and you exit the CLI, your credentials are cached under `~/.gemini/` and the start script can reuse them.
+The helper installs dependencies, builds the Gemini CLI bundle, checks authentication, and launches both backend and frontend. If cached credentials are missing, it guides you through login before continuing. Future runs are the same—just type `./computer` from the repo root.
+
+Prefer a global command? Run `npm link` (or symlink `computer` somewhere on your `$PATH`) to start the Generative Computer from any directory with a plain `computer`.
 
 ## Run the Full Experience
 
 ```bash
-./start.sh
+./computer
 ```
 
 The orchestrator will:
@@ -51,7 +51,7 @@ Press `Ctrl+C` to shut everything down.
 
 ### Helpful Environment Flags
 
-- `DEBUG_AGENT=true ./start.sh` — surface Gemini stdout/stderr and write transcripts to `logs/agent/`
+- `DEBUG_AGENT=true ./computer` — surface Gemini stdout/stderr and write transcripts to `logs/agent/`
 
 ## Project Structure
 
@@ -75,9 +75,9 @@ generative-computer/
 
 ## Troubleshooting
 
-- **Missing bundle** – run `npm run build` if `bundle/gemini.js` is absent before calling `npm start` or `./start.sh`.
+- **Missing bundle** – run `npm run build` if `bundle/gemini.js` is absent before calling `./computer` (or `npm start`).
 - **Authentication loop** – rerun `npm start` and choose “Login with Google” (or your preferred auth mode) to refresh credentials.
-- **Ports 3001/5173 busy** – stop conflicting processes; `./start.sh` attempts to free both ports automatically.
+- **Ports 3001/5173 busy** – stop conflicting processes; `./computer` attempts to free both ports automatically.
 - **Node version warnings** – switch to Node 20 (`nvm use 20`, `fnm use 20`, etc.) to avoid runtime issues.
 
 Enjoy building on the generative desktop! ✨

@@ -62,12 +62,14 @@
     }
   },
   "bin": {
-    "gemini": "bundle/gemini.js"
+    "gemini": "bundle/gemini.js",
+    "computer": "./computer"
   },
   "files": [
     "bundle/",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "computer"
   ],
   "devDependencies": {
     "@types/marked": "^5.0.2",
