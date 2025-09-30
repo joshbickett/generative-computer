@@ -8,7 +8,7 @@ This is a proof of concept which will be iterated quickly as the project develop
 
 ## How It Works
 
-A generative computer runs an AI agent on the backend that generates code to render what the user requests.
+A generative computer runs an AI agent on the backend that generates code to render what the user requests in real time.
 
 1. You type a request in the computer (rendered in the browser).
 2. The backend forwards the request to the Gemini agent.
