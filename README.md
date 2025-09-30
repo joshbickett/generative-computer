@@ -54,7 +54,7 @@ Press `Ctrl+C` to shut everything down.
 ## Project Structure
 
 ```
-open-imagine/
+generative-computer/
 ├── frontend/
 │   ├── src/components/
 │   │   ├── CommandInput.tsx    # Always-on prompt box (protected from edits)

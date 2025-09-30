@@ -123,7 +123,7 @@ USE_REAL_AGENT=true npm start
 ### File Structure
 
 ```
-open-imagine/
+generative-computer/
 ├── frontend/               # React application
 │   ├── src/
 │   │   ├── components/
