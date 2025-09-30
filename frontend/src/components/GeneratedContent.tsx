@@ -10,7 +10,7 @@
 export default function GeneratedContent() {
   return (
     <div className="generated-content">
-      <h2>Welcome to Generative Computer!</h2>
+      <h2>Welcome to the Generative Computer!</h2>
       <p>Type a command below to start generating content.</p>
       <p>Try asking for a todo list or any other request!</p>
 
