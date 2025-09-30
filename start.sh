@@ -82,6 +82,18 @@ free_port() {
     fi
 }
 
+ensure_cli_ready() {
+    if [ ! -d "node_modules" ]; then
+        echo "📦 Installing root dependencies needed for authentication..."
+        npm install
+    fi
+
+    if [ ! -f "packages/cli/dist/index.js" ]; then
+        echo "🔨 Building Gemini CLI core for authentication flow..."
+        npm run build
+    fi
+}
+
 # Check Gemini authentication by looking for known credential files
 echo "🔐 Checking Gemini CLI authentication..."
 
@@ -104,6 +116,7 @@ if [ "$AUTHENTICATED" != "true" ]; then
     echo "  4. Then type '/exit' to continue"
     echo ""
     read -p "Press ENTER to start authentication..."
+    ensure_cli_ready
 
     # Run Gemini CLI for authentication
     npm start
