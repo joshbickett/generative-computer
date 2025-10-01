@@ -157,6 +157,38 @@ function App() {
     });
   }, [openStaticWindow]);
 
+  const handleOpenDemoVideo = useCallback(() => {
+    openStaticWindow({
+      id: 'demo-video',
+      title: 'Project Demo Video',
+      content: (
+        <div className="video-window">
+          <div className="video-window__embed">
+            <iframe
+              src="https://www.youtube.com/embed/FzCsDVfPQqk"
+              title="Generative Computer demo video"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowFullScreen
+              loading="lazy"
+            />
+          </div>
+          <p className="video-window__caption">
+            Follow the journey on{' '}
+            <a
+              href="https://x.com/intent/follow?screen_name=josh_bickett"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Twitter
+            </a>
+            .
+          </p>
+        </div>
+      ),
+      position: { x: 420, y: 240 },
+    });
+  }, [openStaticWindow]);
+
   const handleCommand = useCallback(
     async (command: string) => {
       console.log('Command received:', command);
@@ -300,6 +332,7 @@ function App() {
         onCloseWindow={handleCloseWindow}
         onOpenMyComputer={handleOpenMyComputer}
         onOpenRecycleBin={handleOpenRecycleBin}
+        onOpenDemoVideo={handleOpenDemoVideo}
       />
 
       <div className="status-bar">
