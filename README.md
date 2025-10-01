@@ -75,6 +75,10 @@ generative-computer/
 └── logs/agent/                 # Populated when DEBUG_AGENT=true
 ```
 
+## Stay In The Loop
+
+🚀 **Follow me on Twitter for updates on the project:** [Follow me on Twitter](https://x.com/intent/follow?screen_name=josh_bickett)
+
 ## Troubleshooting
 
 - **Missing bundle** – run `npm run build` if `bundle/gemini.js` is absent before calling `./computer` (or `npm start`).
