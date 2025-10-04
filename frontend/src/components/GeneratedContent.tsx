@@ -11,8 +11,7 @@ export default function GeneratedContent() {
   return (
     <div className="generated-content">
       <h2>Welcome to the Generative Computer!</h2>
-      <p>Type a command below to start generating content.</p>
-      <p>Try asking for a todo list or any other request!</p>
+      <p>Type a command below to start.</p>
 
       <div
         style={{
@@ -26,7 +25,6 @@ export default function GeneratedContent() {
         <ul>
           <li>Type your request in the input box below</li>
           <li>The AI agent will modify this interface</li>
-          <li>New windows appear on the desktop (coming soon)</li>
         </ul>
       </div>
     </div>
