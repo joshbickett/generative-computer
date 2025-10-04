@@ -74,7 +74,7 @@ CRITICAL CONSTRAINTS:
 
 REQUEST:
 The user said: "${userCommand}".
-Translate this into a compelling desktop-style window by GeneratedContent.tsx only.
+Translate this into a compelling end product in GeneratedContent.tsx only. Remember you can create anything that can be rendered in a browser!
 
 STRUCTURE GUIDELINES:
 - Use semantic HTML elements inside JSX.
