@@ -7,7 +7,7 @@
 import fs from 'node:fs/promises';
 
 /**
- * Smart simulator that generates contextual todo lists based on user requests
+ * Smart simulator that generates contextual desktop experiences based on user requests
  * This simulates what the Gemini agent would do
  */
 
@@ -20,11 +20,11 @@ function escapeHtml(text) {
     .replace(/'/g, '&#039;');
 }
 
-export async function generateSmartTodoList(userCommand, outputPath) {
-  // Parse the user's intent and generate appropriate todo items
-  const todos = analyzeTodolist(userCommand);
-  const asciiContent = todos.customContent
-    ? `String.raw\`${todos.customContent.replace(/`/g, '\\`')}\``
+export async function generateSmartExperience(userCommand, outputPath) {
+  // Parse the user's intent and craft an appropriate experience payload
+  const experience = buildExperienceProfile(userCommand);
+  const asciiContent = experience.customContent
+    ? `String.raw\`${experience.customContent.replace(/`/g, '\\`')}\``
     : null;
 
   // Escape the user command for safe display
@@ -36,7 +36,7 @@ export async function generateSmartTodoList(userCommand, outputPath) {
 export default function GeneratedContent() {
   return (
     <div className="generated-content">
-      <h2>📝 ${todos.title}</h2>
+      <h2>${experience.title}</h2>
       <p style={{ color: '#666', marginBottom: '16px' }}>
         Based on your request: &quot;${escapedCommand}&quot;
       </p>
@@ -65,16 +65,21 @@ export default function GeneratedContent() {
         color: 'white',
         marginBottom: '16px'
       }}>
-        <h3 style={{ margin: '0 0 16px 0', fontSize: '18px' }}>✨ Your Todo List</h3>
+        <h3 style={{ margin: '0 0 16px 0', fontSize: '18px' }}>✨ Suggested Plan</h3>
         <ul style={{ margin: 0, paddingLeft: '20px' }}>
-          ${todos.items.map((item) => `<li style={{ marginBottom: '12px', fontSize: '15px' }}>${item}</li>`).join('\n          ')}
+          ${experience.items
+            .map(
+              (item) =>
+                `<li style={{ marginBottom: '12px', fontSize: '15px' }}>${item}</li>`,
+            )
+            .join('\n          ')}
         </ul>
       </div>
       `
       }
 
       ${
-        todos.tips
+        experience.tips
           ? `<div style={{
         padding: '16px',
         background: '#f0f7ff',
@@ -82,7 +87,7 @@ export default function GeneratedContent() {
         borderLeft: '4px solid #667eea'
       }}>
         <p style={{ margin: 0, color: '#333' }}>
-          <strong>💡 Pro Tip:</strong> ${todos.tips}
+          <strong>💡 Pro Tip:</strong> ${experience.tips}
         </p>
       </div>`
           : ''
@@ -92,10 +97,10 @@ export default function GeneratedContent() {
 }`;
 
   await fs.writeFile(outputPath, content, 'utf-8');
-  return todos;
+  return experience;
 }
 
-function analyzeTodolist(command) {
+function buildExperienceProfile(command) {
   const lower = command.toLowerCase();
 
   if (lower.includes('ascii') || lower.includes('art')) {
@@ -120,7 +125,7 @@ function analyzeTodolist(command) {
     lower.includes('apples')
   ) {
     return {
-      title: '🛒 Shopping List',
+      title: '🛒 Shopping Companion',
       items: extractItems(command, [
         'carrots',
         'apples',
@@ -140,7 +145,7 @@ function analyzeTodolist(command) {
     lower.includes('article')
   ) {
     return {
-      title: '✍️ Blog Writing Todo List',
+      title: '✍️ Blog Writing Toolkit',
       items: [
         '📋 Research topic and gather sources',
         '🎯 Define target audience and key message',
@@ -163,7 +168,7 @@ function analyzeTodolist(command) {
     lower.includes('develop')
   ) {
     return {
-      title: '💻 Development Todo List',
+      title: '💻 Development Sprint Plan',
       items: [
         '📐 Design architecture and component structure',
         '🎨 Create UI mockups or wireframes',
@@ -174,7 +179,7 @@ function analyzeTodolist(command) {
         '📚 Document code and API',
         '🚀 Deploy to production',
       ],
-      tips: 'Break large features into small, testable chunks for faster iteration.',
+      tips: 'Break work into small, testable chunks for faster iteration.',
     };
   }
 
@@ -186,7 +191,7 @@ function analyzeTodolist(command) {
     lower.includes('holiday')
   ) {
     return {
-      title: '✈️ Travel Planning Todo List',
+      title: '✈️ Travel Planner',
       items: [
         '🎯 Choose destination and dates',
         '✈️ Book flights and accommodation',
@@ -209,7 +214,7 @@ function analyzeTodolist(command) {
     lower.includes('social media')
   ) {
     return {
-      title: '🐦 Twitter Post Todo List',
+      title: '🐦 Social Media Launch Checklist',
       items: [
         '💡 Draft engaging tweet copy (keep it under 280 chars)',
         '🖼️ Create eye-catching visual or screenshot',
@@ -220,13 +225,13 @@ function analyzeTodolist(command) {
         '📊 Monitor engagement and reply to comments',
         '🔄 Retweet and amplify responses',
       ],
-      tips: 'Posts with images get 150% more retweets. Make it visual!',
+      tips: 'Posts with images get 150% more engagement. Make it visual!',
     };
   }
 
-  // Default generic todo list
+  // Default general planning flow
   return {
-    title: `📋 Todo List: ${command.substring(0, 50)}${command.length > 50 ? '...' : ''}`,
+    title: `📋 Project Brief: ${command.substring(0, 50)}${command.length > 50 ? '...' : ''}`,
     items: [
       '🎯 Define clear goals and success criteria',
       '📋 Break down into smaller actionable steps',

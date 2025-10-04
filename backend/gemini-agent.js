@@ -78,7 +78,7 @@ Translate this into a compelling end product in GeneratedContent.tsx only. Remem
 
 STRUCTURE GUIDELINES:
 - Use semantic HTML elements inside JSX.
-- Include a title, a short description citing the original request, and (when applicable) a list of actionable todo items.
+- Include a title, a short description citing the original request, and (when helpful) structured content such as bullet lists, galleries, or data cards.
 - Feel free to add subtle styling (inline styles are fine) that fits within the retro desktop aesthetic.
 - Avoid importing new modules; rely on React and inline styles.
 

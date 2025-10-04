@@ -11,7 +11,7 @@ import cors from 'cors';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { invokeGeminiAgent, getGeneratedContentPath } from './gemini-agent.js';
-import { generateSmartTodoList } from './smart-simulator.js';
+import { generateSmartExperience } from './smart-simulator.js';
 import { checkGeminiAuth } from './check-auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -103,8 +103,8 @@ app.post('/api/command', async (req, res) => {
 });
 
 async function simulateAgentResponse(command) {
-  console.log('🎨 Generating smart todo list...');
-  const result = await generateSmartTodoList(command, GENERATED_CONTENT_PATH);
+  console.log('🎨 Generating smart desktop experience...');
+  const result = await generateSmartExperience(command, GENERATED_CONTENT_PATH);
   console.log(`✅ Updated GeneratedContent.tsx with: ${result.title}`);
   return result;
 }

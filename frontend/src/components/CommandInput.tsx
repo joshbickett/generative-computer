@@ -36,7 +36,7 @@ export default function CommandInput({
           type="text"
           value={command}
           onChange={(e) => setCommand(e.target.value)}
-          placeholder="Type a command... (e.g., 'Create a todo list')"
+          placeholder="Type a command... (e.g., 'Design a travel itinerary')"
           className="command-input"
           autoFocus
           disabled={isLoading}

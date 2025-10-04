@@ -1,6 +1,6 @@
 # Setting Up the Real Gemini Agent
 
-Currently, Generative Computer uses a **smart simulator** that generates contextual todo lists based on your requests. This works immediately without any setup.
+Currently, Generative Computer uses a **smart simulator** that generates contextual desktop experiences based on your requests. This works immediately without any setup.
 
 To use the **REAL Gemini CLI agent** that actually thinks and writes code, you need to set up authentication first.
 
@@ -83,7 +83,7 @@ When properly authenticated, here's what happens:
 The real agent:
 
 - Actually understands your request
-- Generates creative, contextual todo lists
+- Generates creative, contextual interfaces
 - Can write sophisticated React code
 - Takes 3-10 seconds per request (it's thinking!)
 
@@ -96,9 +96,9 @@ The simulator is quite intelligent and recognizes:
 - Code/development tasks
 - Travel planning
 - Twitter/social media posts
-- Generic todos
+- General planning and productivity prompts
 
-It generates beautiful, contextual todo lists with:
+It generates beautiful, contextual experiences with:
 
 - Relevant emoji icons
 - Contextual tips
@@ -161,4 +161,4 @@ To make the real agent integration more robust:
 
 ---
 
-**For now, enjoy the smart simulator! It's fast, works out of the box, and generates great todo lists.** 🚀
+**For now, enjoy the smart simulator! It's fast, works out of the box, and delivers great interactive experiences.** 🚀

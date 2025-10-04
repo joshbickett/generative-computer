@@ -95,19 +95,15 @@ function App() {
     return () => clearInterval(interval);
   }, [refreshStatus]);
 
-  const createTodoWindow = useCallback((request: string) => {
+  const createCommandWindow = useCallback((request: string) => {
     const newWindow: WindowData = {
       id: `window-${Date.now()}`,
-      title: `Todo: ${truncate(request, 24)}`,
+      title: `Request: ${truncate(request, 24)}`,
       content: (
         <div>
-          <h3>Todo List</h3>
+          <h3>Preview</h3>
           <p>Request: {request}</p>
-          <ul>
-            <li>✅ Define the outcome</li>
-            <li>⬜ Break tasks into steps</li>
-            <li>⬜ Prioritize next actions</li>
-          </ul>
+          <p>Gemini will replace this window with a tailored experience.</p>
         </div>
       ),
     };
@@ -243,14 +239,14 @@ function App() {
               : null,
           timestamp: Date.now(),
         });
-        createTodoWindow(command);
+        createCommandWindow(command);
       } finally {
         setIsProcessing(false);
         setPendingCommand(null);
         refreshStatus();
       }
     },
-    [agentStatus.agentMode, createTodoWindow, refreshStatus],
+    [agentStatus.agentMode, createCommandWindow, refreshStatus],
   );
 
   const commandHint = useMemo(() => {
@@ -267,7 +263,7 @@ function App() {
     }
 
     if (agentStatus.agentMode === 'REAL') {
-      return '💡 Ask for anything! The real Gemini agent can craft todo lists, ASCII panels, or other creative desktop widgets.';
+      return '💡 Ask for anything! The real Gemini agent can craft interactive layouts, ASCII panels, or other creative desktop widgets.';
     }
 
     if (agentStatus.agentMode === 'SIMULATED') {
