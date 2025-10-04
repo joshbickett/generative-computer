@@ -11,24 +11,12 @@ import fs from 'node:fs/promises';
  * This simulates what the Gemini agent would do
  */
 
-function escapeHtml(text) {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
 export async function generateSmartExperience(userCommand, outputPath) {
   // Parse the user's intent and craft an appropriate experience payload
   const experience = buildExperienceProfile(userCommand);
   const asciiContent = experience.customContent
     ? `String.raw\`${experience.customContent.replace(/`/g, '\\`')}\``
     : null;
-
-  // Escape the user command for safe display
-  const escapedCommand = escapeHtml(userCommand);
 
   const content = `// THIS FILE IS MODIFIED BY THE GEMINI AGENT
 // The agent will write dynamic content here based on user commands
@@ -37,9 +25,6 @@ export default function GeneratedContent() {
   return (
     <div className="generated-content">
       <h2>${experience.title}</h2>
-      <p style={{ color: '#666', marginBottom: '16px' }}>
-        Based on your request: &quot;${escapedCommand}&quot;
-      </p>
 
       ${
         asciiContent

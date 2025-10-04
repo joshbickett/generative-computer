@@ -21,6 +21,7 @@ interface DesktopProps {
   onOpenMyComputer: () => void;
   onOpenRecycleBin: () => void;
   onOpenDemoVideo: () => void;
+  onOpenDrawingPad: () => void;
 }
 
 export default function Desktop({
@@ -29,6 +30,7 @@ export default function Desktop({
   onOpenMyComputer,
   onOpenRecycleBin,
   onOpenDemoVideo,
+  onOpenDrawingPad,
 }: DesktopProps) {
   return (
     <div className="desktop">
@@ -48,6 +50,14 @@ export default function Desktop({
         >
           <div className="icon-image">🎬</div>
           <div className="icon-label">Cool Video</div>
+        </button>
+        <button
+          type="button"
+          className="desktop-icon"
+          onClick={onOpenDrawingPad}
+        >
+          <div className="icon-image">🎨</div>
+          <div className="icon-label">Neon Sketch</div>
         </button>
         <button
           type="button"

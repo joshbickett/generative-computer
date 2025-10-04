@@ -9,6 +9,7 @@ import Desktop from './components/Desktop';
 import type { WindowData } from './components/Desktop';
 import CommandInput from './components/CommandInput';
 import GeneratedContent from './components/GeneratedContent';
+import DrawingPadApp from './components/DrawingPadApp';
 import './App.css';
 
 const API_BASE_URL = 'http://localhost:3001';
@@ -185,6 +186,15 @@ function App() {
     });
   }, [openStaticWindow]);
 
+  const handleOpenDrawingPad = useCallback(() => {
+    openStaticWindow({
+      id: 'drawing-pad',
+      title: 'Neon Sketch',
+      content: <DrawingPadApp />,
+      position: { x: 520, y: 160 },
+    });
+  }, [openStaticWindow]);
+
   const handleCommand = useCallback(
     async (command: string) => {
       console.log('Command received:', command);
@@ -329,6 +339,7 @@ function App() {
         onOpenMyComputer={handleOpenMyComputer}
         onOpenRecycleBin={handleOpenRecycleBin}
         onOpenDemoVideo={handleOpenDemoVideo}
+        onOpenDrawingPad={handleOpenDrawingPad}
       />
 
       <div className="status-bar">
