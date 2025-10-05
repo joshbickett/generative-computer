@@ -43,7 +43,7 @@ If the backend ever drops to simulator mode you will still get generated content
 To confirm credentials outside the UI you can run:
 
 ```bash
-node -e "import('./generative-computer/backend/check-auth.js').then(m => m.checkGeminiAuth().then(console.log))"
+node -e "import('./runtime/backend/check-auth.js').then(m => m.checkGeminiAuth().then(console.log))"
 ```
 
 The command prints a JSON summary highlighting Node version problems, auth failures, or a clean success.

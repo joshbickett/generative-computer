@@ -134,12 +134,12 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
-if [ ! -d "generative-computer/frontend/node_modules" ]; then
-    cd generative-computer/frontend && npm install && cd ../..
+if [ ! -d "runtime/frontend/node_modules" ]; then
+    cd runtime/frontend && npm install && cd ../..
 fi
 
-if [ ! -d "generative-computer/backend/node_modules" ]; then
-    cd generative-computer/backend && npm install && cd ../..
+if [ ! -d "runtime/backend/node_modules" ]; then
+    cd runtime/backend && npm install && cd ../..
 fi
 
 # Build Gemini CLI if needed
@@ -165,13 +165,13 @@ echo "Press Ctrl+C to stop all services"
 echo ""
 
 # Start backend with real agent mode
-cd generative-computer/backend && USE_REAL_AGENT=true npm start &
+cd runtime/backend && USE_REAL_AGENT=true npm start &
 
 # Give backend time to start
 sleep 3
 
 # Start frontend
-cd generative-computer/frontend && npm run dev &
+cd runtime/frontend && npm run dev &
 
 # Show success message
 sleep 2

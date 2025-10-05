@@ -70,7 +70,7 @@ Press `Ctrl+C` to shut everything down.
 
 ```
 generative-computer/
-├── generative-computer/
+├── runtime/
 │   ├── AGENTS.md               # Overview of the agent stack and workflows
 │   ├── frontend/
 │   │   ├── src/components/
@@ -89,7 +89,7 @@ generative-computer/
 └── logs/agent/                 # Populated when DEBUG_AGENT=true
 ```
 
-The nested `./generative-computer/` folder keeps the frontend and backend agents grouped together so the top-level `./computer` launcher can keep its original name.
+The nested `./runtime/` folder keeps the frontend and backend agents grouped together so the top-level `./computer` launcher can keep its original name.
 
 ## Stay In The Loop
 
