@@ -70,21 +70,26 @@ Press `Ctrl+C` to shut everything down.
 
 ```
 generative-computer/
-├── frontend/
-│   ├── src/components/
-│   │   ├── CommandInput.tsx    # Always-on prompt box (protected from edits)
-│   │   ├── Desktop.tsx         # Desktop layout and window manager
-│   │   ├── Window.tsx          # Draggable window wrapper
-│   │   └── GeneratedContent.tsx # File Gemini rewrites on every command
-│   └── package.json
-├── backend/
-│   ├── server.js               # Express API (POST /api/command)
-│   ├── gemini-agent.js         # Spawns the Gemini CLI bundle with guardrails
-│   └── smart-simulator.js      # Deterministic fallback content generator
+├── generative-computer/
+│   ├── AGENTS.md               # Overview of the agent stack and workflows
+│   ├── frontend/
+│   │   ├── src/components/
+│   │   │   ├── CommandInput.tsx    # Always-on prompt box (protected from edits)
+│   │   │   ├── Desktop.tsx         # Desktop layout and window manager
+│   │   │   ├── Window.tsx          # Draggable window wrapper
+│   │   │   └── GeneratedContent.tsx # File Gemini rewrites on every command
+│   │   └── package.json
+│   └── backend/
+│       ├── server.js               # Express API (POST /api/command)
+│       ├── gemini-agent.js         # Spawns the Gemini CLI bundle with guardrails
+│       └── smart-simulator.js      # Deterministic fallback content generator
 ├── bundle/                     # Output of `npm run build` (gemini.js lives here)
+├── computer                    # Thin wrapper that forwards to start.sh
 ├── start.sh                    # Launch script for auth + both services
 └── logs/agent/                 # Populated when DEBUG_AGENT=true
 ```
+
+The nested `./generative-computer/` folder keeps the frontend and backend agents grouped together so the top-level `./computer` launcher can keep its original name.
 
 ## Stay In The Loop
 

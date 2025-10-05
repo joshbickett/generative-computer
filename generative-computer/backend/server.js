@@ -24,7 +24,7 @@ app.use(cors());
 app.use(express.json());
 
 // Path to the frontend directory where the agent will write
-const FRONTEND_DIR = join(__dirname, '../frontend/src/components');
+const FRONTEND_DIR = join(__dirname, '..', 'frontend', 'src', 'components');
 const GENERATED_CONTENT_PATH = getGeneratedContentPath();
 
 // Toggle between simulation and real agent
@@ -147,7 +147,9 @@ app.listen(PORT, async () => {
       console.log('');
       console.log('📋 To authenticate:');
       console.log('   1. Open a new terminal');
-      console.log('   2. cd /Users/josh/Documents/software/repos/open-imagine');
+      console.log(
+        '   2. cd /Users/josh/Documents/software/repos/generative-computer',
+      );
       console.log('   3. Run: npm start');
       console.log(
         '   4. Choose "Login with Google" and complete authentication',

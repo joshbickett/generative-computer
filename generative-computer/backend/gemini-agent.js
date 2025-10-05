@@ -14,8 +14,8 @@ import { dirname, join } from 'node:path';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const REPO_ROOT = join(__dirname, '..');
-const FRONTEND_SRC = join(REPO_ROOT, 'frontend/src');
+const REPO_ROOT = join(__dirname, '..', '..');
+const FRONTEND_SRC = join(REPO_ROOT, 'generative-computer', 'frontend', 'src');
 const COMPONENTS_DIR = join(FRONTEND_SRC, 'components');
 const GENERATED_CONTENT_PATH = join(COMPONENTS_DIR, 'GeneratedContent.tsx');
 const GEMINI_BUNDLE = join(REPO_ROOT, 'bundle', 'gemini.js');

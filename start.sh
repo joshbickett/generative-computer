@@ -36,7 +36,7 @@ echo ""
 
 # Check if we're in the right directory
 if [ ! -f "package.json" ]; then
-    echo "❌ Error: Please run this script from the open-imagine root directory"
+    echo "❌ Error: Please run this script from the generative-computer root directory"
     exit 1
 fi
 
@@ -134,12 +134,12 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
-if [ ! -d "frontend/node_modules" ]; then
-    cd frontend && npm install && cd ..
+if [ ! -d "generative-computer/frontend/node_modules" ]; then
+    cd generative-computer/frontend && npm install && cd ../..
 fi
 
-if [ ! -d "backend/node_modules" ]; then
-    cd backend && npm install && cd ..
+if [ ! -d "generative-computer/backend/node_modules" ]; then
+    cd generative-computer/backend && npm install && cd ../..
 fi
 
 # Build Gemini CLI if needed
@@ -165,13 +165,13 @@ echo "Press Ctrl+C to stop all services"
 echo ""
 
 # Start backend with real agent mode
-cd backend && USE_REAL_AGENT=true npm start &
+cd generative-computer/backend && USE_REAL_AGENT=true npm start &
 
 # Give backend time to start
 sleep 3
 
 # Start frontend
-cd frontend && npm run dev &
+cd generative-computer/frontend && npm run dev &
 
 # Show success message
 sleep 2

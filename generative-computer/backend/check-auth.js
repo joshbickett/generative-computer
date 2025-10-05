@@ -13,7 +13,7 @@ import { dirname, join } from 'node:path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const REPO_ROOT = join(__dirname, '..');
+const REPO_ROOT = join(__dirname, '..', '..');
 const BUNDLE_PATH = join(REPO_ROOT, 'bundle', 'gemini.js');
 
 async function hasAuthFiles() {
