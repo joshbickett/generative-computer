@@ -9,6 +9,7 @@ import Desktop from './components/Desktop';
 import type { WindowData } from './components/Desktop';
 import CommandInput from './components/CommandInput';
 import GeneratedContent from './components/GeneratedContent';
+import GeminiStatsWindow from './components/GeminiStatsWindow';
 import DrawingPadApp from './components/DrawingPadApp';
 import './App.css';
 
@@ -195,6 +196,15 @@ function App() {
     });
   }, [openStaticWindow]);
 
+  const handleOpenUsageStats = useCallback(() => {
+    openStaticWindow({
+      id: 'gemini-usage',
+      title: 'Gemini Usage',
+      content: <GeminiStatsWindow />,
+      position: { x: 180, y: 120 },
+    });
+  }, [openStaticWindow]);
+
   const handleCommand = useCallback(
     async (command: string) => {
       console.log('Command received:', command);
@@ -340,6 +350,7 @@ function App() {
         onOpenRecycleBin={handleOpenRecycleBin}
         onOpenDemoVideo={handleOpenDemoVideo}
         onOpenDrawingPad={handleOpenDrawingPad}
+        onOpenUsageStats={handleOpenUsageStats}
       />
 
       <CommandInput

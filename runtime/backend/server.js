@@ -10,7 +10,11 @@ import express from 'express';
 import cors from 'cors';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { invokeGeminiAgent, getGeneratedContentPath } from './gemini-agent.js';
+import {
+  invokeGeminiAgent,
+  getGeneratedContentPath,
+  getUsageSummary,
+} from './gemini-agent.js';
 import { generateSmartExperience } from './smart-simulator.js';
 import { checkGeminiAuth } from './check-auth.js';
 
@@ -118,6 +122,23 @@ app.get('/api/status', (req, res) => {
     agentMode: USE_REAL_AGENT ? 'REAL' : 'SIMULATED',
     authError: authStatus?.error || null,
     debugEnabled: process.env.DEBUG_AGENT === 'true',
+  });
+});
+
+app.get('/api/gemini-stats', (req, res) => {
+  const summary = getUsageSummary();
+
+  if (!summary.latest && !summary.aggregate) {
+    res.json({
+      success: false,
+      message: 'No Gemini API usage has been recorded in this session.',
+    });
+    return;
+  }
+
+  res.json({
+    success: true,
+    summary,
   });
 });
 

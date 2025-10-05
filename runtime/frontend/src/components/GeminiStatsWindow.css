@@ -1,0 +1,126 @@
+.gemini-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  color: #f8f8f2;
+  background: rgba(17, 18, 34, 0.82);
+  border: 1px solid rgba(129, 140, 248, 0.4);
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  max-width: 640px;
+}
+
+.gemini-stats__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.gemini-stats__header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.gemini-stats__header p {
+  margin: 0.25rem 0 0;
+  color: #c0caf5;
+  font-size: 0.9rem;
+}
+
+.gemini-stats__refresh {
+  align-self: center;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(135deg, #7c3aed 0%, #38bdf8 100%);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.gemini-stats__refresh:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.gemini-stats__status {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: rgba(59, 130, 246, 0.15);
+  color: #bfdbfe;
+}
+
+.gemini-stats__alert {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: rgba(248, 113, 113, 0.15);
+  color: #fecaca;
+}
+
+.gemini-stats__grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.gemini-stats__card {
+  background: rgba(30, 64, 175, 0.25);
+  border: 1px solid rgba(129, 140, 248, 0.35);
+  border-radius: 12px;
+  padding: 1rem;
+  backdrop-filter: blur(6px);
+}
+
+.gemini-stats__card h3 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
+  color: #c7d2fe;
+}
+
+.gemini-stats__stat {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.95rem;
+  margin-bottom: 0.35rem;
+}
+
+.gemini-stats__stat dt {
+  color: #94a3b8;
+}
+
+.gemini-stats__stat dd {
+  margin: 0;
+  font-weight: 600;
+  color: #e0e7ff;
+}
+
+.gemini-stats__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.gemini-stats__table th,
+.gemini-stats__table td {
+  padding: 0.5rem 0.75rem;
+  text-align: right;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.gemini-stats__table th:first-child,
+.gemini-stats__table td:first-child {
+  text-align: left;
+}
+
+.gemini-stats__table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.gemini-stats__table thead th {
+  color: #c7d2fe;
+  font-weight: 600;
+}
