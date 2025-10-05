@@ -104,6 +104,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  flex-wrap: wrap;
   margin-bottom: 6px;
 }
 
@@ -218,9 +219,19 @@
   color: #3b2600;
 }
 
+.command-status-chip--pending {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.9), rgba(118, 75, 162, 0.9));
+  color: #09153d;
+}
+
 .command-status-chip--info {
   background: linear-gradient(135deg, rgba(118, 92, 255, 0.9), rgba(54, 168, 255, 0.9));
   color: #07142f;
+}
+
+.command-status-chip--danger {
+  background: linear-gradient(135deg, rgba(255, 153, 153, 0.9), rgba(255, 82, 82, 0.9));
+  color: #3d0606;
 }
 
 .command-status-chip--idle {
@@ -233,6 +244,7 @@
   color: #555;
   text-align: left;
   line-height: 1.4;
+  margin: 0;
 }
 
 @keyframes command-submit-spin {

@@ -94,7 +94,11 @@ export default function CommandInput({
                   ? 'command-status-chip--warn'
                   : agentMode === 'SIMULATED'
                     ? 'command-status-chip--info'
-                    : 'command-status-chip--idle'
+                    : agentMode === 'PENDING'
+                      ? 'command-status-chip--pending'
+                      : agentMode === 'ERROR'
+                        ? 'command-status-chip--danger'
+                        : 'command-status-chip--idle'
             }`}
             data-tooltip={
               agentMode === 'REAL'
