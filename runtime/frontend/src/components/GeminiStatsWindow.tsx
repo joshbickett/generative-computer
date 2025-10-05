@@ -5,9 +5,8 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { requestJson } from '../lib/api';
 import './GeminiStatsWindow.css';
-
-const API_BASE_URL = 'http://localhost:3001';
 
 interface ModelSummary {
   name: string;
@@ -75,11 +74,7 @@ const GeminiStatsWindow = () => {
   const fetchStats = useCallback(async () => {
     setState((prev) => ({ ...prev, loading: true, error: null }));
     try {
-      const response = await fetch(`${API_BASE_URL}/api/gemini-stats`);
-      if (!response.ok) {
-        throw new Error(`Request failed with ${response.status}`);
-      }
-      const data: UsageSummaryResponse = await response.json();
+      const data = await requestJson<UsageSummaryResponse>('/api/gemini-stats');
       if (!data.success || !data.summary) {
         setState({
           loading: false,

@@ -92,3 +92,28 @@ body, html {
 .video-window__caption a:focus-visible {
   text-decoration: underline;
 }
+
+.file-viewer__unsupported {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(420px, 60vw);
+  max-width: 520px;
+  padding: 24px;
+  border-radius: 12px;
+  background: rgba(11, 14, 45, 0.7);
+  color: #f2f5ff;
+  line-height: 1.5;
+}
+
+.file-viewer__unsupported h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #f8fbff;
+}
+
+.file-viewer__unsupported p {
+  margin: 0;
+  font-size: 14px;
+  color: rgba(240, 244, 255, 0.85);
+}

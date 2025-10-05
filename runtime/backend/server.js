@@ -8,8 +8,9 @@
 
 import express from 'express';
 import cors from 'cors';
+import { promises as fs } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname, extname, join, resolve, sep } from 'node:path';
 import {
   invokeGeminiAgent,
   getGeneratedContentPath,
@@ -30,12 +31,55 @@ app.use(express.json());
 // Path to the frontend directory where the agent will write
 const FRONTEND_DIR = join(__dirname, '..', 'frontend', 'src', 'components');
 const GENERATED_CONTENT_PATH = getGeneratedContentPath();
+const WORKSPACE_DIR = join(__dirname, '..', 'my-computer');
 
 // Toggle between simulation and real agent
 const USE_REAL_AGENT = process.env.USE_REAL_AGENT === 'true';
 
 // Store authentication status
 let authStatus = null;
+
+const FILE_KIND_MAP = {
+  '.md': 'markdown',
+  '.markdown': 'markdown',
+  '.tsx': 'tsx',
+};
+
+const DEFAULT_WELCOME_MARKDOWN = `# Welcome to the Generative Computer!\n\nYou and your agent now share this desktop workspace. Files you create here live under **My Computer** and stay editable by both of you.\n\n## Getting Started\n\n- Type a command below to ask the agent for help\n- Open files from **My Computer** to edit them in place\n- Ask the agent to create new notes, plans, or React components\n\n## Tips\n\n- Close and reopen files from **My Computer** whenever you need a clean view\n- Every file shows its real name so you can reference it in future requests\n- Markdown documents render live previews as you edit\n`;
+
+async function ensureWorkspaceDefaults() {
+  await fs.mkdir(WORKSPACE_DIR, { recursive: true });
+
+  const welcomePath = resolve(WORKSPACE_DIR, 'welcome.md');
+  try {
+    await fs.access(welcomePath);
+  } catch {
+    console.log('Creating default welcome note at', welcomePath);
+    await fs.writeFile(welcomePath, DEFAULT_WELCOME_MARKDOWN, 'utf-8');
+  }
+}
+
+function resolveWorkspacePath(relativePath) {
+  const normalizedRoot = WORKSPACE_DIR.endsWith(sep)
+    ? WORKSPACE_DIR
+    : `${WORKSPACE_DIR}${sep}`;
+  const safePath = resolve(WORKSPACE_DIR, relativePath);
+  if (safePath !== WORKSPACE_DIR && !safePath.startsWith(normalizedRoot)) {
+    throw new Error('Invalid workspace path');
+  }
+  return safePath;
+}
+
+function mapFileMetadata(name, stats) {
+  const extension = extname(name).toLowerCase();
+  return {
+    name,
+    path: name,
+    kind: FILE_KIND_MAP[extension] || 'file',
+    size: stats.size,
+    updatedAt: stats.mtime.toISOString(),
+  };
+}
 
 app.post('/api/command', async (req, res) => {
   const { command } = req.body;
@@ -118,11 +162,88 @@ app.get('/api/status', (req, res) => {
     status: 'running',
     frontendDir: FRONTEND_DIR,
     generatedContentPath: GENERATED_CONTENT_PATH,
+    workspaceDir: WORKSPACE_DIR,
     authenticated: authStatus?.authenticated || false,
     agentMode: USE_REAL_AGENT ? 'REAL' : 'SIMULATED',
     authError: authStatus?.error || null,
     debugEnabled: process.env.DEBUG_AGENT === 'true',
   });
+});
+
+app.get('/api/files', async (req, res) => {
+  try {
+    await ensureWorkspaceDefaults();
+    const entries = await fs.readdir(WORKSPACE_DIR, { withFileTypes: true });
+
+    const files = await Promise.all(
+      entries
+        .filter((entry) => entry.isFile())
+        .map(async (entry) => {
+          const absolutePath = resolveWorkspacePath(entry.name);
+          const stats = await fs.stat(absolutePath);
+          return mapFileMetadata(entry.name, stats);
+        }),
+    );
+
+    files.sort((a, b) => a.name.localeCompare(b.name));
+
+    res.json({ success: true, files });
+  } catch (error) {
+    console.error('Unable to list workspace files:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/api/files/content', async (req, res) => {
+  const rawPath = typeof req.query.path === 'string' ? req.query.path : '';
+  const relativePath = rawPath.trim();
+
+  if (!relativePath) {
+    res.status(400).json({ success: false, error: 'Missing file path' });
+    return;
+  }
+
+  try {
+    await ensureWorkspaceDefaults();
+    const filePath = resolveWorkspacePath(relativePath);
+    const content = await fs.readFile(filePath, 'utf-8');
+    res.json({ success: true, content });
+  } catch (error) {
+    console.error(`Unable to read workspace file "${relativePath}":`, error);
+    if (error?.code === 'ENOENT') {
+      res
+        .status(404)
+        .json({ success: false, error: `File not found: ${relativePath}` });
+      return;
+    }
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.put('/api/files/content', async (req, res) => {
+  const rawPath = typeof req.body?.path === 'string' ? req.body.path : '';
+  const relativePath = rawPath.trim();
+  const content = typeof req.body?.content === 'string' ? req.body.content : '';
+
+  if (!relativePath) {
+    res.status(400).json({ success: false, error: 'Missing file path' });
+    return;
+  }
+
+  try {
+    await ensureWorkspaceDefaults();
+    const filePath = resolveWorkspacePath(relativePath);
+    await fs.mkdir(dirname(filePath), { recursive: true });
+    await fs.writeFile(filePath, content, 'utf-8');
+    const stats = await fs.stat(filePath);
+    res.json({
+      success: true,
+      savedAt: stats.mtime.toISOString(),
+    });
+  } catch (error) {
+    console.error(`Unable to write workspace file "${relativePath}":`, error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 app.get('/api/gemini-stats', (req, res) => {
@@ -148,6 +269,7 @@ app.listen(PORT, async () => {
   );
   console.log(`📁 Frontend directory: ${FRONTEND_DIR}`);
   console.log(`📝 Generated content path: ${GENERATED_CONTENT_PATH}`);
+  console.log(`🗂️  Shared workspace: ${WORKSPACE_DIR}`);
   console.log(`🤖 Agent mode: ${USE_REAL_AGENT ? 'REAL Gemini' : 'SIMULATED'}`);
   console.log('');
 
@@ -185,5 +307,11 @@ app.listen(PORT, async () => {
     console.log(
       'To use the real Gemini agent, restart with: USE_REAL_AGENT=true npm start',
     );
+  }
+
+  try {
+    await ensureWorkspaceDefaults();
+  } catch (error) {
+    console.error('⚠️  Unable to prepare My Computer workspace:', error);
   }
 });

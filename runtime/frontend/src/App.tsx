@@ -4,16 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Desktop from './components/Desktop';
 import type { WindowData } from './components/Desktop';
 import CommandInput from './components/CommandInput';
-import GeneratedContent from './components/GeneratedContent';
 import GeminiStatsWindow from './components/GeminiStatsWindow';
 import DrawingPadApp from './components/DrawingPadApp';
+import MyComputer from './components/MyComputer';
+import MarkdownEditor from './components/MarkdownEditor';
+import type { WorkspaceFile } from './types/files';
+import { requestJson } from './lib/api';
 import './App.css';
-
-const API_BASE_URL = 'http://localhost:3001';
 
 type AgentMode =
   | 'REAL'
@@ -45,13 +46,7 @@ function truncate(text: string, max = 60) {
 }
 
 function App() {
-  const [windows, setWindows] = useState<WindowData[]>([
-    {
-      id: 'welcome',
-      title: 'Generative Computer',
-      content: <GeneratedContent />,
-    },
-  ]);
+  const [windows, setWindows] = useState<WindowData[]>([]);
   const [agentStatus, setAgentStatus] = useState<AgentStatus>({
     loading: true,
     authenticated: false,
@@ -62,14 +57,49 @@ function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [pendingCommand, setPendingCommand] = useState<string | null>(null);
   const [lastActivity, setLastActivity] = useState<AgentActivity | null>(null);
+  const [workspaceFiles, setWorkspaceFiles] = useState<WorkspaceFile[]>([]);
+  const [workspaceLoading, setWorkspaceLoading] = useState(false);
+  const [workspaceError, setWorkspaceError] = useState<string | null>(null);
+  const [initialWorkspaceOpened, setInitialWorkspaceOpened] = useState(false);
+  const [initialWelcomeOpened, setInitialWelcomeOpened] = useState(false);
+
+  const refreshWorkspaceFiles = useCallback(async () => {
+    setWorkspaceLoading(true);
+    setWorkspaceError(null);
+    try {
+      const data = await requestJson<{
+        success: boolean;
+        files: WorkspaceFile[];
+        error?: string;
+      }>('/api/files');
+
+      if (data.success === false) {
+        throw new Error(data.error || 'Unable to load workspace files');
+      }
+
+      setWorkspaceFiles(Array.isArray(data.files) ? data.files : []);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setWorkspaceError(message);
+    } finally {
+      setWorkspaceLoading(false);
+    }
+  }, []);
+
+  const refreshWorkspaceFilesRef = useRef(refreshWorkspaceFiles);
+
+  useEffect(() => {
+    refreshWorkspaceFilesRef.current = refreshWorkspaceFiles;
+  }, [refreshWorkspaceFiles]);
 
   const refreshStatus = useCallback(async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/status`);
-      if (!response.ok) {
-        throw new Error(`Status request failed with code ${response.status}`);
-      }
-      const data = await response.json();
+      const data = await requestJson<{
+        authenticated?: boolean;
+        agentMode?: AgentMode;
+        authError?: string | null;
+        debugEnabled?: boolean;
+      }>('/api/status');
 
       setAgentStatus({
         loading: false,
@@ -124,22 +154,58 @@ function App() {
     });
   }, []);
 
+  const handleOpenFile = useCallback((file: WorkspaceFile) => {
+    const windowId = `file:${file.path}`;
+    const isMarkdown = file.kind === 'markdown';
+    const windowContent = isMarkdown ? (
+      <MarkdownEditor
+        file={file}
+        onRefreshFiles={() => refreshWorkspaceFilesRef.current?.()}
+      />
+    ) : (
+      <div className="file-viewer__unsupported">
+        <h3>Preview Unavailable</h3>
+        <p>
+          {file.name} is a <strong>{file.kind}</strong> file. Ask the agent to
+          render it in a dedicated window or convert it to markdown.
+        </p>
+      </div>
+    );
+
+    const newWindow: WindowData = {
+      id: windowId,
+      title: file.name,
+      content: windowContent,
+      position: { x: 320, y: 160 },
+    };
+
+    setWindows((prev) => {
+      const withoutExisting = prev.filter((item) => item.id !== windowId);
+      return [...withoutExisting, newWindow];
+    });
+  }, []);
+
   const handleOpenMyComputer = useCallback(() => {
     openStaticWindow({
       id: 'my-computer',
       title: 'My Computer',
       content: (
-        <div>
-          <h3>Coming Soon</h3>
-          <p>
-            We&apos;re wiring up system shortcuts and folders. Check back later
-            for a fully interactive explorer!
-          </p>
-        </div>
+        <MyComputer
+          files={workspaceFiles}
+          isLoading={workspaceLoading}
+          error={workspaceError}
+          onOpenFile={handleOpenFile}
+        />
       ),
-      position: { x: 260, y: 160 },
+      position: { x: 240, y: 150 },
     });
-  }, [openStaticWindow]);
+  }, [
+    handleOpenFile,
+    openStaticWindow,
+    workspaceError,
+    workspaceFiles,
+    workspaceLoading,
+  ]);
 
   const handleOpenRecycleBin = useCallback(() => {
     openStaticWindow({
@@ -205,6 +271,107 @@ function App() {
     });
   }, [openStaticWindow]);
 
+  useEffect(() => {
+    refreshWorkspaceFiles();
+  }, [refreshWorkspaceFiles]);
+
+  useEffect(() => {
+    if (initialWorkspaceOpened) return;
+    handleOpenMyComputer();
+    setInitialWorkspaceOpened(true);
+  }, [handleOpenMyComputer, initialWorkspaceOpened]);
+
+  useEffect(() => {
+    if (initialWelcomeOpened) return;
+    if (workspaceLoading) return;
+    const welcomeFile = workspaceFiles.find(
+      (file) => file.name === 'welcome.md',
+    );
+    if (!welcomeFile) return;
+    handleOpenFile(welcomeFile);
+    setInitialWelcomeOpened(true);
+  }, [handleOpenFile, initialWelcomeOpened, workspaceFiles, workspaceLoading]);
+
+  useEffect(() => {
+    setWindows((prev) => {
+      let changed = false;
+      const updated = prev.map((window) => {
+        if (window.id === 'my-computer') {
+          changed = true;
+          return {
+            ...window,
+            content: (
+              <MyComputer
+                files={workspaceFiles}
+                isLoading={workspaceLoading}
+                error={workspaceError}
+                onOpenFile={handleOpenFile}
+              />
+            ),
+          };
+        }
+
+        if (window.id.startsWith('file:')) {
+          const filePath = window.id.slice('file:'.length);
+          const file = workspaceFiles.find((item) => item.path === filePath);
+
+          if (file) {
+            changed = true;
+            const isMarkdown = file.kind === 'markdown';
+            return {
+              ...window,
+              title: file.name,
+              content: isMarkdown ? (
+                <MarkdownEditor
+                  file={file}
+                  onRefreshFiles={() => refreshWorkspaceFilesRef.current?.()}
+                />
+              ) : (
+                <div className="file-viewer__unsupported">
+                  <h3>Preview Unavailable</h3>
+                  <p>
+                    {file.name} is a <strong>{file.kind}</strong> file. Ask the
+                    agent to render it in a dedicated window or convert it to
+                    markdown.
+                  </p>
+                </div>
+              ),
+            };
+          }
+
+          if (window.title === filePath) {
+            return window;
+          }
+
+          changed = true;
+          return {
+            ...window,
+            title: filePath,
+            content: (
+              <div className="file-viewer__unsupported">
+                <h3>File Not Found</h3>
+                <p>
+                  The file <strong>{filePath}</strong> no longer exists. Refresh
+                  the file list or ask the agent to recreate it.
+                </p>
+              </div>
+            ),
+          };
+        }
+
+        return window;
+      });
+
+      return changed ? updated : prev;
+    });
+  }, [
+    handleOpenFile,
+    refreshWorkspaceFiles,
+    workspaceError,
+    workspaceFiles,
+    workspaceLoading,
+  ]);
+
   const handleCommand = useCallback(
     async (command: string) => {
       console.log('Command received:', command);
@@ -218,18 +385,22 @@ function App() {
       });
 
       try {
-        const response = await fetch(`${API_BASE_URL}/api/command`, {
+        const data = await requestJson<{
+          success?: boolean;
+          message?: string;
+          mode?: AgentMode;
+          error?: string | null;
+          debugLogPath?: string | null;
+        }>('/api/command', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ command }),
         });
-
-        const data = await response.json();
         console.log('Response from backend:', data);
 
-        if (!response.ok || data.success === false) {
+        if (data.success === false) {
           throw new Error(data.error || 'Agent request failed');
         }
 
@@ -264,9 +435,15 @@ function App() {
         setIsProcessing(false);
         setPendingCommand(null);
         refreshStatus();
+        refreshWorkspaceFiles();
       }
     },
-    [agentStatus.agentMode, createCommandWindow, refreshStatus],
+    [
+      agentStatus.agentMode,
+      createCommandWindow,
+      refreshStatus,
+      refreshWorkspaceFiles,
+    ],
   );
 
   const commandHint = useMemo(() => {
