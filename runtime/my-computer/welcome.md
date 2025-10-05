@@ -1,4 +1,4 @@
-# Welcome to the Generative Computer! there are
+# Welcome to the Generative Computer!
 
 You and your agent now share this desktop workspace. Files you create here live under **My Computer** and stay editable by both of you.
 
