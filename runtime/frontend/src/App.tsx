@@ -61,7 +61,6 @@ function App() {
   const [workspaceLoading, setWorkspaceLoading] = useState(false);
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
   const [initialWorkspaceOpened, setInitialWorkspaceOpened] = useState(false);
-  const [initialWelcomeOpened, setInitialWelcomeOpened] = useState(false);
 
   const refreshWorkspaceFiles = useCallback(async () => {
     setWorkspaceLoading(true);
@@ -280,17 +279,6 @@ function App() {
     handleOpenMyComputer();
     setInitialWorkspaceOpened(true);
   }, [handleOpenMyComputer, initialWorkspaceOpened]);
-
-  useEffect(() => {
-    if (initialWelcomeOpened) return;
-    if (workspaceLoading) return;
-    const welcomeFile = workspaceFiles.find(
-      (file) => file.name === 'welcome.md',
-    );
-    if (!welcomeFile) return;
-    handleOpenFile(welcomeFile);
-    setInitialWelcomeOpened(true);
-  }, [handleOpenFile, initialWelcomeOpened, workspaceFiles, workspaceLoading]);
 
   useEffect(() => {
     setWindows((prev) => {
