@@ -342,38 +342,16 @@ function App() {
         onOpenDrawingPad={handleOpenDrawingPad}
       />
 
-      <div className="status-bar">
-        <span
-          className={`status-pill ${agentStatus.agentMode === 'REAL' ? 'success' : 'warning'}`}
-        >
-          {agentStatus.agentMode === 'REAL'
-            ? 'Real agent connected'
-            : agentStatus.agentMode === 'SIMULATED'
-              ? 'Simulator mode'
-              : 'Agent status unknown'}
-        </span>
-        <span
-          className={`status-pill ${agentStatus.authenticated ? 'success' : 'warning'}`}
-        >
-          {agentStatus.authenticated ? 'Authenticated' : 'Login required'}
-        </span>
-        {agentStatus.debugEnabled && (
-          <span className="status-pill success">Debug logs enabled</span>
-        )}
-        <span className={`status-message ${statusBarMessage.tone}`}>
-          {statusBarMessage.text}
-        </span>
-        {agentStatus.authError && (
-          <span className="status-message warning">
-            {agentStatus.authError}
-          </span>
-        )}
-      </div>
-
       <CommandInput
         onSubmit={handleCommand}
         isLoading={isProcessing}
-        statusMessage={commandHint}
+        statusMessage={statusBarMessage.text}
+        statusTone={statusBarMessage.tone}
+        helperMessage={commandHint}
+        agentMode={agentStatus.agentMode}
+        isAuthenticated={agentStatus.authenticated}
+        debugEnabled={agentStatus.debugEnabled}
+        authError={agentStatus.authError}
       />
     </div>
   );

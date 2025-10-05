@@ -41,28 +41,214 @@
 
 .command-submit {
   padding: 12px 24px;
-  background: #4285f4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #5b8dff 0%, #7a5bff 100%);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: 600;
+  letter-spacing: 0.25px;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  box-shadow: 0 10px 22px rgba(66, 133, 244, 0.28);
 }
 
 .command-submit:hover {
-  background: #357ae8;
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(66, 133, 244, 0.32);
 }
 
 .command-submit:disabled {
-  background: #9bb8f5;
   cursor: not-allowed;
+}
+
+.command-submit:disabled:not(.command-submit--loading) {
+  background: #9bb8f5;
   box-shadow: none;
+}
+
+.command-submit--loading {
+  background: linear-gradient(120deg, rgba(102, 126, 234, 0.95), rgba(118, 75, 162, 0.95), rgba(102, 126, 234, 0.95));
+  background-size: 200% 200%;
+  animation: command-submit-glow 1.6s ease infinite;
+  cursor: wait;
+  box-shadow: 0 16px 32px rgba(102, 126, 234, 0.35);
+}
+
+.command-submit__loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.command-submit__spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: white;
+  animation: command-submit-spin 0.8s linear infinite;
+}
+
+.command-submit__text {
+  letter-spacing: 0.3px;
+}
+
+.command-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+
+.command-status-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  max-width: 70%;
+  color: #444;
+  word-break: break-word;
+}
+
+.command-status-label--pending {
+  color: #a664ff;
+}
+
+.command-status-label--success {
+  color: #2e9d68;
+}
+
+.command-status-label--warning {
+  color: #c97a10;
+}
+
+.command-status-label--error {
+  color: #c93434;
+}
+
+.command-status-label--info {
+  color: #3a65d6;
+}
+
+.command-status-label__error {
+  font-size: 11px;
+  color: #c93434;
+  background: rgba(201, 52, 52, 0.12);
+  padding: 4px 8px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.command-status-label__error::before {
+  content: '⚠️';
+  font-size: 12px;
+}
+
+.command-status-chips {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.command-status-chip {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0d1327;
+  background: rgba(13, 19, 39, 0.1);
+  position: relative;
+  cursor: default;
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+  outline: none;
+}
+
+.command-status-chip:hover,
+.command-status-chip:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(12, 16, 34, 0.25);
+}
+
+.command-status-chip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translate(-50%, 4px);
+  background: rgba(14, 18, 38, 0.94);
+  color: #f5f6ff;
+  padding: 6px 8px;
+  border-radius: 8px;
+  white-space: nowrap;
+  font-size: 11px;
+  line-height: 1.3;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+  box-shadow: 0 12px 24px rgba(8, 12, 30, 0.3);
+}
+
+.command-status-chip:hover::after,
+.command-status-chip:focus-visible::after {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.command-status-chip--ready {
+  background: linear-gradient(135deg, rgba(79, 220, 176, 0.92), rgba(79, 196, 220, 0.92));
+  color: #06311d;
+}
+
+.command-status-chip--warn {
+  background: linear-gradient(135deg, rgba(255, 214, 120, 0.9), rgba(255, 173, 102, 0.9));
+  color: #3b2600;
+}
+
+.command-status-chip--info {
+  background: linear-gradient(135deg, rgba(118, 92, 255, 0.9), rgba(54, 168, 255, 0.9));
+  color: #07142f;
+}
+
+.command-status-chip--idle {
+  background: rgba(255, 255, 255, 0.35);
+  color: #0d1327;
 }
 
 .command-hint {
   font-size: 12px;
-  color: #666;
-  text-align: center;
+  color: #555;
+  text-align: left;
   line-height: 1.4;
+}
+
+@keyframes command-submit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes command-submit-glow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
