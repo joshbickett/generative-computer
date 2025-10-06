@@ -211,6 +211,15 @@
   white-space: pre-wrap;
 }
 
+.markdown-block__code {
+  background: rgba(93, 110, 202, 0.12);
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin: 0 0 12px;
+  font-family: 'Fira Code', 'Cascadia Code', 'Menlo', monospace;
+  white-space: pre-wrap;
+}
+
 .rich-editor__area:empty::before {
   content: 'Start writing...';
   color: rgba(48, 58, 110, 0.5);

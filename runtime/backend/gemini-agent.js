@@ -9,7 +9,7 @@
 import { spawn } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -17,6 +17,9 @@ const __dirname = dirname(__filename);
 const REPO_ROOT = join(__dirname, '..', '..');
 const FRONTEND_SRC = join(REPO_ROOT, 'runtime', 'frontend', 'src');
 const COMPONENTS_DIR = join(FRONTEND_SRC, 'components');
+const AGENT_COMPONENTS_DIR = join(FRONTEND_SRC, 'agent-components');
+const AGENT_MANIFEST_PATH = join(FRONTEND_SRC, 'agent-manifest.ts');
+const WORKSPACE_DIR = join(REPO_ROOT, 'runtime', 'my-computer');
 const GENERATED_CONTENT_PATH = join(COMPONENTS_DIR, 'GeneratedContent.tsx');
 const GEMINI_BUNDLE = join(REPO_ROOT, 'bundle', 'gemini.js');
 const LOG_DIR = join(REPO_ROOT, 'logs', 'agent');
@@ -38,6 +41,51 @@ const deepClone = (value) => {
   }
   return JSON.parse(JSON.stringify(value));
 };
+
+async function readFileSafe(path) {
+  try {
+    return await fs.readFile(path, 'utf-8');
+  } catch (error) {
+    if (error?.code !== 'ENOENT') {
+      console.warn(`⚠️  Unable to read ${path}:`, error);
+    }
+    return null;
+  }
+}
+
+async function snapshotDirectory(root, depth = 0, prefix = '') {
+  if (depth > 2) return [];
+
+  let dirents;
+  try {
+    dirents = await fs.readdir(root, { withFileTypes: true });
+  } catch (error) {
+    if (error?.code !== 'ENOENT') {
+      console.warn(`⚠️  Unable to list ${root}:`, error);
+    }
+    return [];
+  }
+
+  dirents.sort((a, b) => a.name.localeCompare(b.name));
+
+  const lines = [];
+  for (const entry of dirents) {
+    const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) {
+      lines.push(`📁 ${relativePath}/`);
+      lines.push(
+        ...(await snapshotDirectory(
+          join(root, entry.name),
+          depth + 1,
+          relativePath,
+        )),
+      );
+    } else {
+      lines.push(`📄 ${relativePath}`);
+    }
+  }
+  return lines;
+}
 
 const normalizeModelStats = (stats) => ({
   api: {
@@ -272,45 +320,91 @@ export async function invokeGeminiAgent(userCommand) {
   console.log('🤖 Invoking Gemini agent...');
   console.log('📝 User command:', userCommand);
 
-  const systemPrompt = `You are an AI coding agent helping power the "Generative Computer" React experience.
+  const systemPrompt = `You are an AI coding agent helping power the "Generative Computer" desktop experience.
 
-CRITICAL CONSTRAINTS:
-1. You can ONLY modify files under: ${COMPONENTS_DIR}
-2. The following files must remain untouched:
-   - CommandInput.tsx / CommandInput.css
-   - Desktop.tsx / Desktop.css
-   - Window.tsx / Window.css
-3. GeneratedContent.tsx must always exist in the same folder, export default function GeneratedContent, and continue rendering the user's desktop window.
-4. Never remove, hide, or disable the command input text box rendered by CommandInput.
-5. When embedding multi-line ASCII art or code, wrap it in a <pre> element and call String.raw on the string literal so the JSX remains valid without escape errors.
+You collaborate with a human by editing shared files. Respect these guardrails:
 
-REQUEST:
-The user said: "${userCommand}".
-Translate this into a compelling end product in GeneratedContent.tsx only. Remember you can create anything that can be rendered in a browser!
+ALLOWED LOCATIONS
+- ${WORKSPACE_DIR}   ("My Computer" workspace for notes, data, and assets)
+- ${AGENT_COMPONENTS_DIR}   (React components that render custom desktop windows)
+- ${AGENT_MANIFEST_PATH}    (window registry; keep the exported array intact)
 
-STRUCTURE GUIDELINES:
-- Use semantic HTML elements inside JSX.
-- Include a title, a short description citing the original request, and (when helpful) structured content such as bullet lists, galleries, or data cards.
-- Feel free to add subtle styling (inline styles are fine) that fits within the retro desktop aesthetic.
-- Avoid importing new modules; rely on React and inline styles.
+PROTECTED FILES
+- runtime/frontend/src/components/CommandInput.*
+- runtime/frontend/src/components/Desktop.*
+- runtime/frontend/src/components/Window.*
+- Frontend entrypoints, bundler config, and any other infrastructure files
 
-When finished, print the single word DONE as the final line of your response.`;
+WORKFLOW BASICS
+1. Markdown & data → create files under runtime/my-computer/ (e.g. plans, tables, csv exports).
+2. Interactive UI → place components in src/agent-components/, export them, then register windows in agent-manifest.ts with kind 'component'.
+3. Auto-open notes → add an entry with kind 'markdown' and the relative filename (e.g. 'retro-roadmap.md').
+4. Use descriptive filenames and stable ids so the desktop can reconcile updates.
 
-  let existingContent = '';
-  try {
-    existingContent = await fs.readFile(GENERATED_CONTENT_PATH, 'utf-8');
-  } catch (error) {
-    console.warn('⚠️  Unable to read current GeneratedContent.tsx:', error);
+MANIFEST REMINDERS
+- Keep \`export const agentWindows: AgentWindowDescriptor[] = [...]\`.
+- Import components relatively from \`./agent-components/...\`.
+- Each descriptor needs a unique \`id\`, a \`title\`, and either \`kind: 'markdown'\` + \`file\`, or \`kind: 'component'\` + \`component\`.
+- Optional \`position: { x, y }\` lets you choose an initial window placement.
+
+DESKTOP NOTES
+- My Computer shows everything inside runtime/my-computer/ so the user (and you) can edit files directly.
+- Never disable or hide the command input.
+- Clean up obsolete manifest entries when your experience is no longer needed.
+
+GENERAL STYLE
+- Prefer accessible HTML, clear headings, and concise copy.
+- When embedding ASCII art or long code, wrap it in triple backticks inside markdown.
+- Explain how the human can interact with whatever you create.
+
+When you finish applying the request, respond with the single word DONE.`;
+
+  const manifestContents = await readFileSafe(AGENT_MANIFEST_PATH);
+  const workspaceSnapshot = await snapshotDirectory(WORKSPACE_DIR);
+  const componentSnapshot = await snapshotDirectory(AGENT_COMPONENTS_DIR);
+
+  const promptSections = [
+    systemPrompt,
+    '',
+    `Current agent-manifest.ts (${relative(REPO_ROOT, AGENT_MANIFEST_PATH)}):`,
+    '```ts',
+    manifestContents ?? '// (file does not exist yet)',
+    '```',
+    '',
+    `Workspace snapshot (${relative(REPO_ROOT, WORKSPACE_DIR)}):`,
+    workspaceSnapshot.length
+      ? workspaceSnapshot
+          .slice(0, 40)
+          .map((line) => `  ${line}`)
+          .join('\n')
+      : '  (empty)',
+  ];
+
+  if (workspaceSnapshot.length > 40) {
+    promptSections.push('  …');
   }
 
-  const promptWithContext = `${systemPrompt}
+  promptSections.push(
+    '',
+    `Agent components (${relative(REPO_ROOT, AGENT_COMPONENTS_DIR)}):`,
+    componentSnapshot.length
+      ? componentSnapshot
+          .slice(0, 40)
+          .map((line) => `  ${line}`)
+          .join('\n')
+      : '  (empty)',
+  );
 
-The current contents of GeneratedContent.tsx are:
-\n\`\`\`tsx
-${existingContent}
-\`\`\`
+  if (componentSnapshot.length > 40) {
+    promptSections.push('  …');
+  }
 
-Please apply the requested update and include DONE at the very end.`;
+  promptSections.push(
+    '',
+    'Please implement the request and reply with DONE when complete.',
+  );
+
+  const promptWithContext = promptSections.join('\n');
 
   await fs.access(GEMINI_BUNDLE).catch(() => {
     throw new Error(
@@ -410,7 +504,7 @@ Please apply the requested update and include DONE at the very end.`;
           output: responseText,
           rawOutput: output,
           stats: stats ? deepClone(stats) : null,
-          modifiedFile: GENERATED_CONTENT_PATH,
+          modifiedFile: null,
           debugLogPath: logPath,
         });
       } else {

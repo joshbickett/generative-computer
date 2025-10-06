@@ -5,84 +5,79 @@
  */
 
 import fs from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
+import { join } from 'node:path';
+
+const WORKSPACE_DIR = join(__dirname, '..', 'my-computer');
 
 /**
- * Smart simulator that generates contextual desktop experiences based on user requests
- * This simulates what the Gemini agent would do
+ * Smart simulator that generates contextual desktop experiences based on user requests.
+ * Instead of writing to GeneratedContent.tsx, we now create collaborative files
+ * in the shared "My Computer" workspace so both the user and the agent can edit them.
  */
 
-export async function generateSmartExperience(userCommand, outputPath) {
-  // Parse the user's intent and craft an appropriate experience payload
+export async function generateSmartExperience(userCommand) {
   const experience = buildExperienceProfile(userCommand);
-  const asciiContent = experience.customContent
-    ? `String.raw\`${experience.customContent.replace(/`/g, '\\`')}\``
-    : null;
 
-  const content = `// THIS FILE IS MODIFIED BY THE GEMINI AGENT
-// The agent will write dynamic content here based on user commands
+  await fs.mkdir(WORKSPACE_DIR, { recursive: true });
 
-export default function GeneratedContent() {
-  return (
-    <div className="generated-content">
-      <h2>${experience.title}</h2>
+  const noteFileName = buildWorkspaceFileName(experience.title || userCommand);
+  const absolutePath = join(WORKSPACE_DIR, noteFileName);
 
-      ${
-        asciiContent
-          ? `
-      <div style={{
-        background: '#1b1c2c',
-        color: '#f3f4ff',
-        padding: '20px',
-        borderRadius: '12px',
-        fontFamily: '\\"Fira Code\\", \\"Cascadia Code\\", monospace',
-        whiteSpace: 'pre',
-        marginBottom: '16px',
-        boxShadow: '0 12px 28px rgba(10, 15, 45, 0.45)'
-      }}>
-        {${asciiContent}}
-      </div>
-      `
-          : `
-      <div style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        padding: '20px',
-        borderRadius: '12px',
-        color: 'white',
-        marginBottom: '16px'
-      }}>
-        <h3 style={{ margin: '0 0 16px 0', fontSize: '18px' }}>✨ Suggested Plan</h3>
-        <ul style={{ margin: 0, paddingLeft: '20px' }}>
-          ${experience.items
-            .map(
-              (item) =>
-                `<li style={{ marginBottom: '12px', fontSize: '15px' }}>${item}</li>`,
-            )
-            .join('\n          ')}
-        </ul>
-      </div>
-      `
-      }
+  const lines = [];
+  lines.push(`# ${experience.title}`);
+  lines.push('');
+  lines.push(`> Generated for request: “${userCommand}”.`);
 
-      ${
-        experience.tips
-          ? `<div style={{
-        padding: '16px',
-        background: '#f0f7ff',
-        borderRadius: '8px',
-        borderLeft: '4px solid #667eea'
-      }}>
-        <p style={{ margin: 0, color: '#333' }}>
-          <strong>💡 Pro Tip:</strong> ${experience.tips}
-        </p>
-      </div>`
-          : ''
-      }
-    </div>
+  if (experience.customContent) {
+    lines.push('');
+    lines.push('```');
+    lines.push(experience.customContent);
+    lines.push('```');
+  }
+
+  if (experience.items?.length) {
+    lines.push('');
+    lines.push('## Suggested Plan');
+    lines.push('');
+    for (const item of experience.items) {
+      lines.push(`- ${item}`);
+    }
+  }
+
+  if (experience.tips) {
+    lines.push('');
+    lines.push('## Tip');
+    lines.push('');
+    lines.push(`> ${experience.tips}`);
+  }
+
+  lines.push('');
+  lines.push('---');
+  lines.push('');
+  lines.push(
+    'This note lives in `runtime/my-computer/`. Ask the agent to expand it, turn it into a React experience, or export the data elsewhere.',
   );
-}`;
 
-  await fs.writeFile(outputPath, content, 'utf-8');
-  return experience;
+  await fs.writeFile(absolutePath, lines.join('\n'), 'utf-8');
+
+  return {
+    title: experience.title,
+    notePath: noteFileName,
+    noteAbsolutePath: absolutePath,
+    tips: experience.tips,
+  };
+}
+
+function buildWorkspaceFileName(label) {
+  const normalized = label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
+
+  const base = normalized || 'workspace-note';
+  return `${base}-${randomUUID().slice(0, 8)}.md`;
 }
 
 function buildExperienceProfile(command) {

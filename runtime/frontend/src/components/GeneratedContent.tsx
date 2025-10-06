@@ -10,22 +10,20 @@
 export default function GeneratedContent() {
   return (
     <div className="generated-content">
-      <h2>Welcome to the Generative Computer!</h2>
-      <p>Type a command below to start.</p>
-
-      <div
-        style={{
-          marginTop: '20px',
-          padding: '16px',
-          background: '#f5f5f5',
-          borderRadius: '8px',
-        }}
-      >
-        <h3>Getting Started</h3>
-        <ul>
-          <li>Type your request in the input box below</li>
-          <li>The AI agent will modify this interface</li>
-        </ul>
+      <div style={{ padding: '20px' }}>
+        <h2>Workspace Upgraded</h2>
+        <p>
+          The agent now collaborates by creating files inside{' '}
+          <code>runtime/my-computer/</code>
+          and registering desktop windows through <code>agent-manifest.ts</code>
+          .
+        </p>
+        <p>
+          Use the <strong>My Computer</strong> window to open markdown notes,
+          data files, or any React experiences the agent publishes. This legacy
+          panel is kept around as a gentle reminder that the new workflow lives
+          in the shared filesystem.
+        </p>
       </div>
     </div>
   );

@@ -11,13 +11,20 @@ generative-computer/
 │   ├── my-computer/            # Shared “My Computer” workspace (markdown, notes, etc.)
 │   │   └── welcome.md          # Default note opened at boot
 │   ├── frontend/
-│   │   ├── src/components/
-│   │   │   ├── CommandInput.tsx     # Always-on prompt box (protected from edits)
-│   │   │   ├── Desktop.tsx          # Desktop layout and window manager
-│   │   │   ├── Window.tsx           # Draggable window wrapper
-│   │   │   ├── MyComputer.tsx       # Lists workspace files for humans + agents
-│   │   │   ├── MarkdownEditor.tsx   # Dual-pane markdown editor/preview
-│   │   │   └── GeneratedContent.tsx # Legacy showcase example (kept for reference)
+│   │   ├── src/
+│   │   │   ├── agent-components/    # Agent-authored React components live here
+│   │   │   │   └── .keep
+│   │   │   ├── agent-manifest.ts    # AgentWindowDescriptor[] manifest
+│   │   │   ├── components/
+│   │   │   │   ├── CommandInput.tsx # Always-on prompt box (protected from edits)
+│   │   │   │   ├── Desktop.tsx      # Desktop layout and window manager
+│   │   │   │   ├── Window.tsx       # Draggable window wrapper
+│   │   │   │   ├── MyComputer.tsx   # Lists workspace files for humans + agents
+│   │   │   │   └── MarkdownEditor.tsx / MarkdownViewer.tsx
+│   │   │   ├── lib/
+│   │   │   │   ├── api.ts           # Fetch helper with API base fallbacks
+│   │   │   │   └── markdown.ts      # Shared markdown rendering utilities
+│   │   │   └── types/windows.ts     # AgentWindowDescriptor definition
 │   │   └── package.json
 │   └── backend/
 │       ├── server.js               # Express API (commands + workspace file CRUD)
@@ -35,12 +42,39 @@ A generative computer runs an AI agent on the backend that generates code to ren
 
 1. You type a request in the computer (rendered in the browser).
 2. The backend forwards the request to the Gemini agent.
-3. The agent can update shared workspace files under `runtime/my-computer/` (markdown notes, task lists, etc.) or craft React components within `runtime/frontend/src/components/`.
-4. The frontend watches these locations: markdown files flow into the **My Computer** window and open in a live editor, while React components can be mounted into new desktop windows.
+3. The agent modifies shared workspace files under `runtime/my-computer/` and, when needed, creates UI components under `runtime/frontend/src/agent-components/` while updating `agent-manifest.ts` to announce new windows.
+4. The frontend watches these locations: markdown/data files appear in **My Computer** for collaborative editing, and any manifest entry instantly opens a desktop window (either rendering markdown or a React component).
 
 ## Working with the shared desktop
 
-- **Markdown first.** Creating or editing `runtime/my-computer/*.md` instantly syncs with the Markdown editor. Give the file a descriptive name (for example `retro-roadmap.md`) so both the human and agent can reference it later.
-- **React experiences.** When you need interactivity, create a `.tsx` module beside the other components. Import it from `Desktop` or open it in a dedicated window you compose. The existing `GeneratedContent.tsx` file is a good reference for styling and layout conventions.
-- **Name things clearly.** The UI surfaces the exact file name inside the window title bar. If you plan to ask the human to reopen something, tell them the filename they should double-click inside **My Computer**.
-- **Keep CommandInput.tsx / Desktop.tsx / Window.tsx untouched.** Those remain protected so the shell stays stable. Compose new UI inside components you create, and wire them up through the desktop window system instead of altering the protected primitives.
+- **Markdown & data first.** Drop collaborative notes, CSVs, JSON blobs, or TODO lists under `runtime/my-computer/`. Files here appear in **My Computer** immediately and can be edited by both the human and the agent.
+- **Register windows via the manifest.** To auto-open a document, add `{ id, title, kind: 'markdown', file: 'note.md' }` to `agent-manifest.ts`. For interactive UI, create a component in `src/agent-components/`, import it, and add `{ id, title, kind: 'component', component: MyWidget }`.
+- **Use stable identifiers.** Pick descriptive filenames (`project-timeline.md`, `weather-widget.tsx`) and manifest ids so future updates reconcile cleanly.
+- **Avoid protected primitives.** Leave `CommandInput`, `Desktop`, and `Window` components untouched. Build new UI in agent components and surface it through the manifest instead of editing core chrome.
+- **Avoid protected primitives.** Leave `CommandInput`, `Desktop`, and `Window` components untouched. Build new UI in agent components and surface it through the manifest instead of editing core chrome.
+
+## Agent manifest quickstart
+
+```ts
+// runtime/frontend/src/agent-manifest.ts
+import type { AgentWindowDescriptor } from './types/windows';
+import TravelWidget from './agent-components/TravelWidget';
+
+export const agentWindows: AgentWindowDescriptor[] = [
+  {
+    id: 'daily-plan',
+    title: 'Daily Plan',
+    kind: 'markdown',
+    file: 'daily-plan.md',
+    position: { x: 240, y: 180 },
+  },
+  {
+    id: 'travel-widget',
+    title: 'Travel Ideas',
+    kind: 'component',
+    component: TravelWidget,
+  },
+];
+```
+
+Each descriptor either renders an existing workspace file (`kind: 'markdown'`) or a React component you export from `src/agent-components/`. Use stable IDs so subsequent edits reconcile with existing windows.

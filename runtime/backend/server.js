@@ -32,6 +32,20 @@ app.use(express.json());
 const FRONTEND_DIR = join(__dirname, '..', 'frontend', 'src', 'components');
 const GENERATED_CONTENT_PATH = getGeneratedContentPath();
 const WORKSPACE_DIR = join(__dirname, '..', 'my-computer');
+const AGENT_COMPONENTS_DIR = join(
+  __dirname,
+  '..',
+  'frontend',
+  'src',
+  'agent-components',
+);
+const AGENT_MANIFEST_PATH = join(
+  __dirname,
+  '..',
+  'frontend',
+  'src',
+  'agent-manifest.ts',
+);
 
 // Toggle between simulation and real agent
 const USE_REAL_AGENT = process.env.USE_REAL_AGENT === 'true';
@@ -152,8 +166,14 @@ app.post('/api/command', async (req, res) => {
 
 async function simulateAgentResponse(command) {
   console.log('🎨 Generating smart desktop experience...');
-  const result = await generateSmartExperience(command, GENERATED_CONTENT_PATH);
-  console.log(`✅ Updated GeneratedContent.tsx with: ${result.title}`);
+  const result = await generateSmartExperience(command);
+  if (result?.notePath) {
+    console.log(`✅ Created workspace note: ${result.notePath}`);
+  } else {
+    console.log(
+      `✅ Generated workspace content for: ${result?.title ?? command}`,
+    );
+  }
   return result;
 }
 
@@ -163,6 +183,8 @@ app.get('/api/status', (req, res) => {
     frontendDir: FRONTEND_DIR,
     generatedContentPath: GENERATED_CONTENT_PATH,
     workspaceDir: WORKSPACE_DIR,
+    agentManifestPath: AGENT_MANIFEST_PATH,
+    agentComponentsDir: AGENT_COMPONENTS_DIR,
     authenticated: authStatus?.authenticated || false,
     agentMode: USE_REAL_AGENT ? 'REAL' : 'SIMULATED',
     authError: authStatus?.error || null,
@@ -270,6 +292,8 @@ app.listen(PORT, async () => {
   console.log(`📁 Frontend directory: ${FRONTEND_DIR}`);
   console.log(`📝 Generated content path: ${GENERATED_CONTENT_PATH}`);
   console.log(`🗂️  Shared workspace: ${WORKSPACE_DIR}`);
+  console.log(`🧩 Agent components: ${AGENT_COMPONENTS_DIR}`);
+  console.log(`🪟 Agent manifest: ${AGENT_MANIFEST_PATH}`);
   console.log(`🤖 Agent mode: ${USE_REAL_AGENT ? 'REAL Gemini' : 'SIMULATED'}`);
   console.log('');
 

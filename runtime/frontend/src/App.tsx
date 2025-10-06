@@ -4,7 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  createElement,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import Desktop from './components/Desktop';
 import type { WindowData } from './components/Desktop';
 import CommandInput from './components/CommandInput';
@@ -13,6 +20,9 @@ import DrawingPadApp from './components/DrawingPadApp';
 import MyComputer from './components/MyComputer';
 import MarkdownEditor from './components/MarkdownEditor';
 import type { WorkspaceFile } from './types/files';
+import MarkdownViewer from './components/MarkdownViewer';
+import { agentWindows as initialAgentWindows } from './agent-manifest';
+import type { AgentWindowDescriptor } from './types/windows';
 import { requestJson } from './lib/api';
 import './App.css';
 
@@ -41,6 +51,26 @@ interface AgentActivity {
   timestamp: number;
 }
 
+type AgentManagedWindow = WindowData & {
+  __agentSignature?: string;
+  __agentComponent?: unknown;
+};
+
+function getAgentWindowSignature(config: AgentWindowDescriptor): string {
+  return config.kind === 'markdown'
+    ? `markdown:${config.file}`
+    : `component:${config.id}`;
+}
+
+function renderAgentWindowContent(config: AgentWindowDescriptor) {
+  return config.kind === 'component'
+    ? createElement(config.component)
+    : createElement(MarkdownViewer, {
+        filePath: config.file,
+        title: config.title,
+      });
+}
+
 function truncate(text: string, max = 60) {
   return text.length > max ? `${text.slice(0, max)}...` : text;
 }
@@ -61,6 +91,11 @@ function App() {
   const [workspaceLoading, setWorkspaceLoading] = useState(false);
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
   const [initialWorkspaceOpened, setInitialWorkspaceOpened] = useState(false);
+  const [agentWindowConfigs, setAgentWindowConfigs] =
+    useState<AgentWindowDescriptor[]>(initialAgentWindows);
+  const [dismissedAgentWindowIds, setDismissedAgentWindowIds] = useState<
+    string[]
+  >([]);
 
   const refreshWorkspaceFiles = useCallback(async () => {
     setWorkspaceLoading(true);
@@ -90,6 +125,22 @@ function App() {
   useEffect(() => {
     refreshWorkspaceFilesRef.current = refreshWorkspaceFiles;
   }, [refreshWorkspaceFiles]);
+
+  useEffect(() => {
+    if (!import.meta.hot) return;
+    const acceptHandler = (mod: typeof import('./agent-manifest')) => {
+      setAgentWindowConfigs(mod.agentWindows);
+    };
+    import.meta.hot.accept('./agent-manifest.ts', acceptHandler);
+  }, []);
+
+  useEffect(() => {
+    setDismissedAgentWindowIds((prev) =>
+      prev.filter((id) =>
+        agentWindowConfigs.some((config) => `agent:${config.id}` === id),
+      ),
+    );
+  }, [agentWindowConfigs]);
 
   const refreshStatus = useCallback(async () => {
     try {
@@ -144,6 +195,11 @@ function App() {
 
   const handleCloseWindow = useCallback((id: string) => {
     setWindows((prev) => prev.filter((window) => window.id !== id));
+    if (id.startsWith('agent:')) {
+      setDismissedAgentWindowIds((prev) =>
+        prev.includes(id) ? prev : [...prev, id],
+      );
+    }
   }, []);
 
   const openStaticWindow = useCallback((window: WindowData) => {
@@ -279,6 +335,104 @@ function App() {
     handleOpenMyComputer();
     setInitialWorkspaceOpened(true);
   }, [handleOpenMyComputer, initialWorkspaceOpened]);
+
+  useEffect(() => {
+    setWindows((prev) => {
+      const currentWindows = prev as AgentManagedWindow[];
+      const agentIds = new Set(
+        agentWindowConfigs.map((config) => `agent:${config.id}`),
+      );
+      const dismissed = new Set(dismissedAgentWindowIds);
+
+      let changed = false;
+
+      const trimmed = currentWindows.filter((window) => {
+        if (!window.id.startsWith('agent:')) {
+          return true;
+        }
+
+        if (!agentIds.has(window.id)) {
+          changed = true;
+          return false;
+        }
+
+        if (dismissed.has(window.id)) {
+          changed = true;
+          return false;
+        }
+
+        return true;
+      });
+
+      const updated = trimmed.map((window) => {
+        if (!window.id.startsWith('agent:')) {
+          return window;
+        }
+
+        const config = agentWindowConfigs.find(
+          (item) => `agent:${item.id}` === window.id,
+        );
+
+        if (!config) {
+          changed = true;
+          return window;
+        }
+
+        const signature = getAgentWindowSignature(config);
+        const componentRef =
+          config.kind === 'component' ? config.component : undefined;
+
+        const titleChanged = window.title !== config.title;
+        const signatureChanged = window.__agentSignature !== signature;
+        const componentChanged =
+          config.kind === 'component' &&
+          window.__agentComponent !== componentRef;
+
+        if (!titleChanged && !signatureChanged && !componentChanged) {
+          return window;
+        }
+
+        changed = true;
+
+        return {
+          ...window,
+          title: config.title,
+          content: renderAgentWindowContent(config),
+          __agentSignature: signature,
+          __agentComponent: componentRef,
+        } as AgentManagedWindow;
+      });
+
+      const existingIds = new Set(updated.map((window) => window.id));
+      const additions = agentWindowConfigs
+        .filter((config) => !dismissed.has(`agent:${config.id}`))
+        .filter((config) => !existingIds.has(`agent:${config.id}`))
+        .map((config, index) => {
+          changed = true;
+          const id = `agent:${config.id}`;
+          const position = config.position ?? {
+            x: 260 + index * 40,
+            y: 200 + index * 30,
+          };
+
+          return {
+            id,
+            title: config.title,
+            content: renderAgentWindowContent(config),
+            position,
+            __agentSignature: getAgentWindowSignature(config),
+            __agentComponent:
+              config.kind === 'component' ? config.component : undefined,
+          } as AgentManagedWindow;
+        });
+
+      if (!changed) {
+        return prev;
+      }
+
+      return [...updated, ...additions] as WindowData[];
+    });
+  }, [agentWindowConfigs, dismissedAgentWindowIds]);
 
   useEffect(() => {
     setWindows((prev) => {
