@@ -19,6 +19,7 @@ import GeminiStatsWindow from './components/GeminiStatsWindow';
 import DrawingPadApp from './components/DrawingPadApp';
 import MyComputer from './components/MyComputer';
 import MarkdownEditor from './components/MarkdownEditor';
+import TextEditor from './components/TextEditor';
 import type { WorkspaceFile } from './types/files';
 import MarkdownViewer from './components/MarkdownViewer';
 import { agentWindows as initialAgentWindows } from './agent-manifest';
@@ -96,6 +97,13 @@ function App() {
   const [dismissedAgentWindowIds, setDismissedAgentWindowIds] = useState<
     string[]
   >([]);
+  const previousWorkspaceSetRef = useRef<Set<string>>(new Set());
+  const pendingWorkspaceFileToOpenRef = useRef<string | null>(null);
+  const workspaceRefreshIntentRef = useRef<'manual' | 'create' | null>(null);
+  const [workspaceStatusMessage, setWorkspaceStatusMessage] = useState<
+    string | null
+  >(null);
+  const [isCreatingWorkspaceFile, setIsCreatingWorkspaceFile] = useState(false);
 
   const refreshWorkspaceFiles = useCallback(async () => {
     setWorkspaceLoading(true);
@@ -112,9 +120,15 @@ function App() {
       }
 
       setWorkspaceFiles(Array.isArray(data.files) ? data.files : []);
+      if (workspaceRefreshIntentRef.current === 'manual') {
+        setWorkspaceStatusMessage('Up to date');
+      }
+      workspaceRefreshIntentRef.current = null;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setWorkspaceError(message);
+      setWorkspaceStatusMessage('Refresh failed');
+      workspaceRefreshIntentRef.current = null;
     } finally {
       setWorkspaceLoading(false);
     }
@@ -125,6 +139,12 @@ function App() {
   useEffect(() => {
     refreshWorkspaceFilesRef.current = refreshWorkspaceFiles;
   }, [refreshWorkspaceFiles]);
+
+  const handleRefreshWorkspace = useCallback(() => {
+    setWorkspaceStatusMessage('Syncing…');
+    workspaceRefreshIntentRef.current = 'manual';
+    refreshWorkspaceFilesRef.current?.();
+  }, []);
 
   useEffect(() => {
     if (!import.meta.hot) return;
@@ -211,21 +231,35 @@ function App() {
 
   const handleOpenFile = useCallback((file: WorkspaceFile) => {
     const windowId = `file:${file.path}`;
-    const isMarkdown = file.kind === 'markdown';
-    const windowContent = isMarkdown ? (
-      <MarkdownEditor
-        file={file}
-        onRefreshFiles={() => refreshWorkspaceFilesRef.current?.()}
-      />
-    ) : (
-      <div className="file-viewer__unsupported">
-        <h3>Preview Unavailable</h3>
-        <p>
-          {file.name} is a <strong>{file.kind}</strong> file. Ask the agent to
-          render it in a dedicated window or convert it to markdown.
-        </p>
-      </div>
-    );
+    const windowContent = (() => {
+      if (file.kind === 'markdown') {
+        return (
+          <MarkdownEditor
+            file={file}
+            onRefreshFiles={() => refreshWorkspaceFilesRef.current?.()}
+          />
+        );
+      }
+
+      if (file.kind === 'text') {
+        return (
+          <TextEditor
+            file={file}
+            onRefreshFiles={() => refreshWorkspaceFilesRef.current?.()}
+          />
+        );
+      }
+
+      return (
+        <div className="file-viewer__unsupported">
+          <h3>Preview Unavailable</h3>
+          <p>
+            {file.name} is a <strong>{file.kind}</strong> file. Ask the agent to
+            render it in a dedicated window or convert it to markdown.
+          </p>
+        </div>
+      );
+    })();
 
     const newWindow: WindowData = {
       id: windowId,
@@ -240,6 +274,103 @@ function App() {
     });
   }, []);
 
+  const createWorkspaceFile = useCallback(
+    async ({
+      promptMessage,
+      defaultPath,
+      template = '',
+      ensureExtension,
+    }: {
+      promptMessage: string;
+      defaultPath: string;
+      template?: string;
+      ensureExtension?: string[];
+    }) => {
+      if (isCreatingWorkspaceFile) {
+        return;
+      }
+
+      const input = window.prompt(promptMessage, defaultPath);
+      if (input === null) {
+        return;
+      }
+
+      const trimmed = input.trim();
+      if (!trimmed) {
+        setWorkspaceStatusMessage('Name cannot be empty');
+        return;
+      }
+
+      if (trimmed.startsWith('/') || trimmed.includes('..')) {
+        console.warn(
+          'Workspace file creation aborted: path must stay inside runtime/my-computer',
+        );
+        setWorkspaceStatusMessage('Path must stay inside runtime/my-computer');
+        return;
+      }
+
+      let targetPath = trimmed;
+      if (ensureExtension?.length) {
+        const lower = trimmed.toLowerCase();
+        if (!ensureExtension.some((ext) => lower.endsWith(ext))) {
+          targetPath = `${trimmed}${ensureExtension[0]}`;
+        }
+      }
+
+      const existing = workspaceFiles.find((file) => file.path === targetPath);
+      if (existing) {
+        const shouldOverwrite = window.confirm(
+          `${targetPath} already exists. Do you want to overwrite it?`,
+        );
+        if (!shouldOverwrite) {
+          return;
+        }
+      }
+
+      workspaceRefreshIntentRef.current = 'create';
+      setIsCreatingWorkspaceFile(true);
+      setWorkspaceStatusMessage(`Creating ${targetPath}…`);
+      try {
+        await requestJson('/api/files/content', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ path: targetPath, content: template }),
+        });
+        pendingWorkspaceFileToOpenRef.current = targetPath;
+        await refreshWorkspaceFiles();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        setWorkspaceError(message);
+        setWorkspaceStatusMessage(`Failed to create ${targetPath}`);
+        console.error(`Unable to create ${targetPath}:`, message);
+        workspaceRefreshIntentRef.current = null;
+      } finally {
+        setIsCreatingWorkspaceFile(false);
+      }
+    },
+    [isCreatingWorkspaceFile, refreshWorkspaceFiles, workspaceFiles],
+  );
+
+  const handleCreateMarkdown = useCallback(() => {
+    void createWorkspaceFile({
+      promptMessage: 'Enter a relative path for your new markdown file:',
+      defaultPath: 'notes/new-note.md',
+      template: '# New note\n\n',
+      ensureExtension: ['.md', '.markdown'],
+    });
+  }, [createWorkspaceFile]);
+
+  const handleCreateTextFile = useCallback(() => {
+    void createWorkspaceFile({
+      promptMessage:
+        'Enter a relative path for your new text or CSV file (e.g. data/plan.csv):',
+      defaultPath: 'data/new-file.csv',
+      template: '',
+    });
+  }, [createWorkspaceFile]);
+
   const handleOpenMyComputer = useCallback(() => {
     openStaticWindow({
       id: 'my-computer',
@@ -250,13 +381,23 @@ function App() {
           isLoading={workspaceLoading}
           error={workspaceError}
           onOpenFile={handleOpenFile}
+          onCreateMarkdown={handleCreateMarkdown}
+          onCreateTextFile={handleCreateTextFile}
+          onRefresh={handleRefreshWorkspace}
+          statusMessage={workspaceStatusMessage}
+          disableActions={isCreatingWorkspaceFile}
         />
       ),
       position: { x: 240, y: 150 },
     });
   }, [
     handleOpenFile,
+    handleCreateMarkdown,
+    handleCreateTextFile,
+    handleRefreshWorkspace,
     openStaticWindow,
+    isCreatingWorkspaceFile,
+    workspaceStatusMessage,
     workspaceError,
     workspaceFiles,
     workspaceLoading,
@@ -329,6 +470,59 @@ function App() {
   useEffect(() => {
     refreshWorkspaceFiles();
   }, [refreshWorkspaceFiles]);
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      if (document.hidden) {
+        return;
+      }
+      if (!workspaceLoading) {
+        refreshWorkspaceFilesRef.current?.();
+      }
+    }, 5000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [workspaceLoading]);
+
+  useEffect(() => {
+    const previous = previousWorkspaceSetRef.current;
+    const current = new Set(workspaceFiles.map((file) => file.path));
+    const pendingPath = pendingWorkspaceFileToOpenRef.current;
+
+    if (previous.size === 0 && current.size > 0 && !pendingPath) {
+      previousWorkspaceSetRef.current = current;
+      return;
+    }
+
+    if (pendingPath) {
+      const pendingFile = workspaceFiles.find(
+        (file) => file.path === pendingPath,
+      );
+      if (pendingFile) {
+        handleOpenFile(pendingFile);
+        pendingWorkspaceFileToOpenRef.current = null;
+        setWorkspaceStatusMessage(`Ready to edit ${pendingFile.name}`);
+      }
+    } else {
+      const newlyAdded = workspaceFiles.filter(
+        (file) => !previous.has(file.path),
+      );
+      if (newlyAdded.length > 0) {
+        const previewNames = newlyAdded.slice(0, 2).map((file) => file.name);
+        const suffix =
+          newlyAdded.length > 2 ? ` +${newlyAdded.length - 2}` : '';
+        const label =
+          newlyAdded.length === 1
+            ? previewNames[0]
+            : `${previewNames.join(', ')}${suffix}`;
+        setWorkspaceStatusMessage(`Added ${label}`);
+      }
+    }
+
+    previousWorkspaceSetRef.current = current;
+  }, [workspaceFiles, handleOpenFile]);
 
   useEffect(() => {
     if (initialWorkspaceOpened) return;
@@ -448,6 +642,11 @@ function App() {
                 isLoading={workspaceLoading}
                 error={workspaceError}
                 onOpenFile={handleOpenFile}
+                onCreateMarkdown={handleCreateMarkdown}
+                onCreateTextFile={handleCreateTextFile}
+                onRefresh={handleRefreshWorkspace}
+                statusMessage={workspaceStatusMessage}
+                disableActions={isCreatingWorkspaceFile}
               />
             ),
           };
@@ -459,25 +658,30 @@ function App() {
 
           if (file) {
             changed = true;
-            const isMarkdown = file.kind === 'markdown';
             return {
               ...window,
               title: file.name,
-              content: isMarkdown ? (
-                <MarkdownEditor
-                  file={file}
-                  onRefreshFiles={() => refreshWorkspaceFilesRef.current?.()}
-                />
-              ) : (
-                <div className="file-viewer__unsupported">
-                  <h3>Preview Unavailable</h3>
-                  <p>
-                    {file.name} is a <strong>{file.kind}</strong> file. Ask the
-                    agent to render it in a dedicated window or convert it to
-                    markdown.
-                  </p>
-                </div>
-              ),
+              content:
+                file.kind === 'markdown' ? (
+                  <MarkdownEditor
+                    file={file}
+                    onRefreshFiles={() => refreshWorkspaceFilesRef.current?.()}
+                  />
+                ) : file.kind === 'text' ? (
+                  <TextEditor
+                    file={file}
+                    onRefreshFiles={() => refreshWorkspaceFilesRef.current?.()}
+                  />
+                ) : (
+                  <div className="file-viewer__unsupported">
+                    <h3>Preview Unavailable</h3>
+                    <p>
+                      {file.name} is a <strong>{file.kind}</strong> file. Ask
+                      the agent to render it in a dedicated window or convert it
+                      to markdown.
+                    </p>
+                  </div>
+                ),
             };
           }
 
@@ -508,7 +712,12 @@ function App() {
     });
   }, [
     handleOpenFile,
+    handleCreateMarkdown,
+    handleCreateTextFile,
+    handleRefreshWorkspace,
     refreshWorkspaceFiles,
+    isCreatingWorkspaceFile,
+    workspaceStatusMessage,
     workspaceError,
     workspaceFiles,
     workspaceLoading,

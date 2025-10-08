@@ -12,6 +12,11 @@ interface MyComputerProps {
   isLoading: boolean;
   error: string | null;
   onOpenFile: (file: WorkspaceFile) => void;
+  onCreateMarkdown: () => void;
+  onCreateTextFile: () => void;
+  onRefresh: () => void;
+  statusMessage?: string | null;
+  disableActions?: boolean;
 }
 
 function formatSize(bytes: number): string {
@@ -45,6 +50,8 @@ function describeKind(kind: WorkspaceFile['kind']): string {
       return 'Markdown document';
     case 'tsx':
       return 'React component';
+    case 'text':
+      return 'Text file';
     default:
       return 'File';
   }
@@ -56,6 +63,8 @@ function iconForKind(kind: WorkspaceFile['kind']): string {
       return '📝';
     case 'tsx':
       return '🧩';
+    case 'text':
+      return '📄';
     default:
       return '📄';
   }
@@ -66,7 +75,15 @@ export default function MyComputer({
   isLoading,
   error,
   onOpenFile,
+  onCreateMarkdown,
+  onCreateTextFile,
+  onRefresh,
+  statusMessage,
+  disableActions = false,
 }: MyComputerProps) {
+  const statusText = isLoading ? 'Loading…' : (statusMessage ?? '');
+  const actionsDisabled = disableActions || isLoading;
+
   return (
     <div className="my-computer">
       <div className="my-computer__toolbar">
@@ -74,9 +91,37 @@ export default function MyComputer({
           Shared workspace for you and the agent. Edits here write to disk so
           both of you stay in sync.
         </p>
-        <span className="my-computer__status" aria-live="polite">
-          {isLoading ? 'Loading…' : ''}
-        </span>
+        <div className="my-computer__toolbar-meta">
+          <div className="my-computer__actions">
+            <button
+              type="button"
+              className="my-computer__button"
+              onClick={onCreateMarkdown}
+              disabled={actionsDisabled}
+            >
+              New Markdown
+            </button>
+            <button
+              type="button"
+              className="my-computer__button"
+              onClick={onCreateTextFile}
+              disabled={actionsDisabled}
+            >
+              New Text/CSV
+            </button>
+            <button
+              type="button"
+              className="my-computer__button my-computer__button--secondary"
+              onClick={onRefresh}
+              disabled={isLoading || actionsDisabled}
+            >
+              Refresh
+            </button>
+          </div>
+          <span className="my-computer__status" aria-live="polite">
+            {statusText}
+          </span>
+        </div>
       </div>
 
       {error ? (
@@ -88,7 +133,8 @@ export default function MyComputer({
         <div className="my-computer__state">
           <p>No files yet.</p>
           <p className="my-computer__state-detail">
-            Ask the agent to create one or start a fresh markdown note.
+            Ask the agent to create one or use the buttons above to start a new
+            file yourself.
           </p>
         </div>
       ) : (

@@ -14,6 +14,7 @@
   justify-content: space-between;
   gap: 16px;
   align-items: flex-start;
+  flex-wrap: wrap;
 }
 
 .my-computer__blurb {
@@ -21,6 +22,54 @@
   color: #2c345d;
   font-size: 14px;
   line-height: 1.5;
+}
+
+.my-computer__toolbar-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-end;
+  min-width: 220px;
+}
+
+.my-computer__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.my-computer__button {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(67, 78, 140, 0.2);
+  background: linear-gradient(135deg, rgba(125, 143, 255, 0.2), rgba(86, 110, 210, 0.25));
+  color: #223068;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.my-computer__button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.my-computer__button:not(:disabled):hover,
+.my-computer__button:not(:disabled):focus-visible {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, rgba(125, 143, 255, 0.3), rgba(86, 110, 210, 0.35));
+  box-shadow: 0 10px 22px rgba(67, 83, 180, 0.18);
+  outline: none;
+}
+
+.my-computer__button--secondary {
+  background: linear-gradient(135deg, rgba(247, 249, 255, 0.9), rgba(215, 226, 255, 0.9));
+}
+
+.my-computer__button--secondary:not(:disabled):hover,
+.my-computer__button--secondary:not(:disabled):focus-visible {
+  background: linear-gradient(135deg, rgba(235, 241, 255, 0.95), rgba(200, 214, 255, 0.95));
 }
 
 .my-computer__status {

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export type WorkspaceFileKind = 'markdown' | 'tsx' | 'file';
+export type WorkspaceFileKind = 'markdown' | 'tsx' | 'text' | 'file';
 
 export interface WorkspaceFile {
   name: string;

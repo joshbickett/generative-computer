@@ -6,7 +6,11 @@
 
 import fs from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const WORKSPACE_DIR = join(__dirname, '..', 'my-computer');
 

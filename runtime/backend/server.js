@@ -56,8 +56,41 @@ let authStatus = null;
 const FILE_KIND_MAP = {
   '.md': 'markdown',
   '.markdown': 'markdown',
+  '.mdown': 'markdown',
+  '.mkd': 'markdown',
+  '.mkdown': 'markdown',
+  '.rmd': 'markdown',
   '.tsx': 'tsx',
 };
+
+const TEXT_FILE_EXTENSIONS = new Set([
+  '.txt',
+  '.text',
+  '.csv',
+  '.tsv',
+  '.json',
+  '.yaml',
+  '.yml',
+  '.xml',
+  '.html',
+  '.htm',
+  '.css',
+  '.scss',
+  '.less',
+  '.js',
+  '.mjs',
+  '.cjs',
+  '.ts',
+  '.jsx',
+  '.py',
+  '.rb',
+  '.go',
+  '.rs',
+  '.java',
+  '.swift',
+  '.kt',
+  '.sql',
+]);
 
 const DEFAULT_WELCOME_MARKDOWN = `# Welcome to the Generative Computer!\n\nYou and your agent now share this desktop workspace. Files you create here live under **My Computer** and stay editable by both of you.\n\n## Getting Started\n\n- Type a command below to ask the agent for help\n- Open files from **My Computer** to edit them in place\n- Ask the agent to create new notes, plans, or React components\n\n## Tips\n\n- Close and reopen files from **My Computer** whenever you need a clean view\n- Every file shows its real name so you can reference it in future requests\n- Markdown documents render live previews as you edit\n`;
 
@@ -86,13 +119,48 @@ function resolveWorkspacePath(relativePath) {
 
 function mapFileMetadata(name, stats) {
   const extension = extname(name).toLowerCase();
+  const kind =
+    FILE_KIND_MAP[extension] ||
+    (TEXT_FILE_EXTENSIONS.has(extension) ? 'text' : 'file');
+
   return {
     name,
     path: name,
-    kind: FILE_KIND_MAP[extension] || 'file',
+    kind,
     size: stats.size,
     updatedAt: stats.mtime.toISOString(),
   };
+}
+
+async function collectWorkspaceFiles(
+  directory = WORKSPACE_DIR,
+  relativePrefix = '',
+) {
+  const entries = await fs.readdir(directory, { withFileTypes: true });
+  const files = [];
+
+  for (const entry of entries) {
+    const relativePath = relativePrefix
+      ? join(relativePrefix, entry.name)
+      : entry.name;
+    const absolutePath = join(directory, entry.name);
+
+    if (entry.isDirectory()) {
+      const nestedFiles = await collectWorkspaceFiles(
+        absolutePath,
+        relativePath,
+      );
+      files.push(...nestedFiles);
+      continue;
+    }
+
+    if (entry.isFile()) {
+      const stats = await fs.stat(absolutePath);
+      files.push(mapFileMetadata(relativePath, stats));
+    }
+  }
+
+  return files;
 }
 
 app.post('/api/command', async (req, res) => {
@@ -195,19 +263,9 @@ app.get('/api/status', (req, res) => {
 app.get('/api/files', async (req, res) => {
   try {
     await ensureWorkspaceDefaults();
-    const entries = await fs.readdir(WORKSPACE_DIR, { withFileTypes: true });
+    const files = await collectWorkspaceFiles();
 
-    const files = await Promise.all(
-      entries
-        .filter((entry) => entry.isFile())
-        .map(async (entry) => {
-          const absolutePath = resolveWorkspacePath(entry.name);
-          const stats = await fs.stat(absolutePath);
-          return mapFileMetadata(entry.name, stats);
-        }),
-    );
-
-    files.sort((a, b) => a.name.localeCompare(b.name));
+    files.sort((a, b) => a.path.localeCompare(b.path));
 
     res.json({ success: true, files });
   } catch (error) {
