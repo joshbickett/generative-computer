@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import { useEffect, useMemo, useState } from 'react';
 import type { WorkspaceFile } from '../types/files';
 import './MyComputer.css';
 
@@ -12,11 +13,14 @@ interface MyComputerProps {
   isLoading: boolean;
   error: string | null;
   onOpenFile: (file: WorkspaceFile) => void;
-  onCreateMarkdown: () => void;
-  onCreateTextFile: () => void;
-  onRefresh: () => void;
+  onCreateFile: (options: {
+    path: string;
+    type: 'markdown' | 'text' | 'csv';
+  }) => void;
+  onDeleteFile: (file: WorkspaceFile) => void;
   statusMessage?: string | null;
   disableActions?: boolean;
+  isCreatingFile: boolean;
 }
 
 function formatSize(bytes: number): string {
@@ -75,14 +79,66 @@ export default function MyComputer({
   isLoading,
   error,
   onOpenFile,
-  onCreateMarkdown,
-  onCreateTextFile,
-  onRefresh,
+  onCreateFile,
+  onDeleteFile,
   statusMessage,
   disableActions = false,
+  isCreatingFile,
 }: MyComputerProps) {
   const statusText = isLoading ? 'Loading…' : (statusMessage ?? '');
   const actionsDisabled = disableActions || isLoading;
+  const [isCreatorOpen, setIsCreatorOpen] = useState(false);
+  const [newFilePath, setNewFilePath] = useState('notes/new-file');
+  const [newFileType, setNewFileType] = useState<'markdown' | 'text' | 'csv'>(
+    'markdown',
+  );
+  const [submittedWhileOpen, setSubmittedWhileOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isCreatingFile && submittedWhileOpen) {
+      setIsCreatorOpen(false);
+      setSubmittedWhileOpen(false);
+      setNewFilePath('notes/new-file');
+      setNewFileType('markdown');
+    }
+  }, [isCreatingFile, submittedWhileOpen]);
+
+  const pathError = useMemo(() => {
+    const trimmed = newFilePath.trim();
+    if (!trimmed) {
+      return 'Enter a file name';
+    }
+    if (trimmed.startsWith('/') || trimmed.includes('..')) {
+      return 'Stay inside runtime/my-computer';
+    }
+    if (trimmed.endsWith('/')) {
+      return 'Provide a file name, not just a folder';
+    }
+    return null;
+  }, [newFilePath]);
+
+  const handleToggleCreator = () => {
+    if (actionsDisabled) {
+      return;
+    }
+    if (isCreatorOpen) {
+      setIsCreatorOpen(false);
+      setSubmittedWhileOpen(false);
+      setNewFilePath('notes/new-file');
+      setNewFileType('markdown');
+      return;
+    }
+    setIsCreatorOpen(true);
+  };
+
+  const handleCreateSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (actionsDisabled || pathError) {
+      return;
+    }
+    setSubmittedWhileOpen(true);
+    onCreateFile({ path: newFilePath.trim(), type: newFileType });
+  };
 
   return (
     <div className="my-computer">
@@ -96,26 +152,10 @@ export default function MyComputer({
             <button
               type="button"
               className="my-computer__button"
-              onClick={onCreateMarkdown}
+              onClick={handleToggleCreator}
               disabled={actionsDisabled}
             >
-              New Markdown
-            </button>
-            <button
-              type="button"
-              className="my-computer__button"
-              onClick={onCreateTextFile}
-              disabled={actionsDisabled}
-            >
-              New Text/CSV
-            </button>
-            <button
-              type="button"
-              className="my-computer__button my-computer__button--secondary"
-              onClick={onRefresh}
-              disabled={isLoading || actionsDisabled}
-            >
-              Refresh
+              {isCreatorOpen ? 'Close' : 'Create File'}
             </button>
           </div>
           <span className="my-computer__status" aria-live="polite">
@@ -123,6 +163,68 @@ export default function MyComputer({
           </span>
         </div>
       </div>
+
+      {isCreatorOpen ? (
+        <form className="my-computer__creator" onSubmit={handleCreateSubmit}>
+          <div className="my-computer__creator-row">
+            <label className="my-computer__creator-field">
+              <span className="my-computer__creator-label">File name</span>
+              <input
+                type="text"
+                value={newFilePath}
+                onChange={(event) => setNewFilePath(event.target.value)}
+                className="my-computer__creator-input"
+                placeholder="notes/new-file"
+                disabled={actionsDisabled}
+                aria-invalid={pathError ? 'true' : 'false'}
+              />
+            </label>
+            <label className="my-computer__creator-field">
+              <span className="my-computer__creator-label">Type</span>
+              <select
+                value={newFileType}
+                onChange={(event) =>
+                  setNewFileType(
+                    event.target.value as 'markdown' | 'text' | 'csv',
+                  )
+                }
+                className="my-computer__creator-select"
+                disabled={actionsDisabled}
+              >
+                <option value="markdown">Markdown (.md)</option>
+                <option value="text">Plain text (.txt)</option>
+                <option value="csv">Spreadsheet (.csv)</option>
+              </select>
+            </label>
+          </div>
+          {pathError ? (
+            <p className="my-computer__creator-error" role="alert">
+              {pathError}
+            </p>
+          ) : (
+            <p className="my-computer__creator-hint">
+              Files save under <code>runtime/my-computer/</code>
+            </p>
+          )}
+          <div className="my-computer__creator-actions">
+            <button
+              type="button"
+              className="my-computer__button my-computer__button--ghost"
+              onClick={handleToggleCreator}
+              disabled={isCreatingFile}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="my-computer__button my-computer__button--accent"
+              disabled={Boolean(pathError) || actionsDisabled}
+            >
+              {isCreatingFile ? 'Creating…' : 'Create'}
+            </button>
+          </div>
+        </form>
+      ) : null}
 
       {error ? (
         <div className="my-computer__state my-computer__state--error">
@@ -133,28 +235,38 @@ export default function MyComputer({
         <div className="my-computer__state">
           <p>No files yet.</p>
           <p className="my-computer__state-detail">
-            Ask the agent to create one or use the buttons above to start a new
+            Ask the agent to create one or use the button above to start a new
             file yourself.
           </p>
         </div>
       ) : (
         <div className="my-computer__grid" role="list">
           {files.map((file) => (
-            <button
-              key={file.path}
-              type="button"
-              className="my-computer__file"
-              onClick={() => onOpenFile(file)}
-            >
-              <span className="my-computer__icon" aria-hidden="true">
-                {iconForKind(file.kind)}
-              </span>
-              <span className="my-computer__filename">{file.name}</span>
-              <span className="my-computer__meta">
-                {describeKind(file.kind)} · {formatSize(file.size)} · Updated{' '}
-                {formatUpdatedAt(file.updatedAt)}
-              </span>
-            </button>
+            <div key={file.path} className="my-computer__file" role="listitem">
+              <button
+                type="button"
+                className="my-computer__file-main"
+                onClick={() => onOpenFile(file)}
+                title={`Open ${file.name}`}
+              >
+                <span className="my-computer__icon" aria-hidden="true">
+                  {iconForKind(file.kind)}
+                </span>
+                <span className="my-computer__filename">{file.name}</span>
+                <span className="my-computer__meta">
+                  {describeKind(file.kind)} · {formatSize(file.size)} · Updated{' '}
+                  {formatUpdatedAt(file.updatedAt)}
+                </span>
+              </button>
+              <button
+                type="button"
+                className="my-computer__file-delete"
+                onClick={() => onDeleteFile(file)}
+                title={`Delete ${file.name}`}
+              >
+                Delete
+              </button>
+            </div>
           ))}
         </div>
       )}

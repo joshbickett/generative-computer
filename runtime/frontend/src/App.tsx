@@ -20,7 +20,7 @@ import DrawingPadApp from './components/DrawingPadApp';
 import MyComputer from './components/MyComputer';
 import MarkdownEditor from './components/MarkdownEditor';
 import TextEditor from './components/TextEditor';
-import type { WorkspaceFile } from './types/files';
+import type { WorkspaceFile, WorkspaceFileDeleteResponse } from './types/files';
 import MarkdownViewer from './components/MarkdownViewer';
 import { agentWindows as initialAgentWindows } from './agent-manifest';
 import type { AgentWindowDescriptor } from './types/windows';
@@ -99,7 +99,7 @@ function App() {
   >([]);
   const previousWorkspaceSetRef = useRef<Set<string>>(new Set());
   const pendingWorkspaceFileToOpenRef = useRef<string | null>(null);
-  const workspaceRefreshIntentRef = useRef<'manual' | 'create' | null>(null);
+  const workspaceRefreshIntentRef = useRef<'create' | null>(null);
   const [workspaceStatusMessage, setWorkspaceStatusMessage] = useState<
     string | null
   >(null);
@@ -120,9 +120,6 @@ function App() {
       }
 
       setWorkspaceFiles(Array.isArray(data.files) ? data.files : []);
-      if (workspaceRefreshIntentRef.current === 'manual') {
-        setWorkspaceStatusMessage('Up to date');
-      }
       workspaceRefreshIntentRef.current = null;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -139,12 +136,6 @@ function App() {
   useEffect(() => {
     refreshWorkspaceFilesRef.current = refreshWorkspaceFiles;
   }, [refreshWorkspaceFiles]);
-
-  const handleRefreshWorkspace = useCallback(() => {
-    setWorkspaceStatusMessage('Syncing…');
-    workspaceRefreshIntentRef.current = 'manual';
-    refreshWorkspaceFilesRef.current?.();
-  }, []);
 
   useEffect(() => {
     if (!import.meta.hot) return;
@@ -276,57 +267,12 @@ function App() {
 
   const createWorkspaceFile = useCallback(
     async ({
-      promptMessage,
-      defaultPath,
+      targetPath,
       template = '',
-      ensureExtension,
     }: {
-      promptMessage: string;
-      defaultPath: string;
+      targetPath: string;
       template?: string;
-      ensureExtension?: string[];
     }) => {
-      if (isCreatingWorkspaceFile) {
-        return;
-      }
-
-      const input = window.prompt(promptMessage, defaultPath);
-      if (input === null) {
-        return;
-      }
-
-      const trimmed = input.trim();
-      if (!trimmed) {
-        setWorkspaceStatusMessage('Name cannot be empty');
-        return;
-      }
-
-      if (trimmed.startsWith('/') || trimmed.includes('..')) {
-        console.warn(
-          'Workspace file creation aborted: path must stay inside runtime/my-computer',
-        );
-        setWorkspaceStatusMessage('Path must stay inside runtime/my-computer');
-        return;
-      }
-
-      let targetPath = trimmed;
-      if (ensureExtension?.length) {
-        const lower = trimmed.toLowerCase();
-        if (!ensureExtension.some((ext) => lower.endsWith(ext))) {
-          targetPath = `${trimmed}${ensureExtension[0]}`;
-        }
-      }
-
-      const existing = workspaceFiles.find((file) => file.path === targetPath);
-      if (existing) {
-        const shouldOverwrite = window.confirm(
-          `${targetPath} already exists. Do you want to overwrite it?`,
-        );
-        if (!shouldOverwrite) {
-          return;
-        }
-      }
-
       workspaceRefreshIntentRef.current = 'create';
       setIsCreatingWorkspaceFile(true);
       setWorkspaceStatusMessage(`Creating ${targetPath}…`);
@@ -340,6 +286,7 @@ function App() {
         });
         pendingWorkspaceFileToOpenRef.current = targetPath;
         await refreshWorkspaceFiles();
+        workspaceRefreshIntentRef.current = null;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         setWorkspaceError(message);
@@ -350,26 +297,105 @@ function App() {
         setIsCreatingWorkspaceFile(false);
       }
     },
-    [isCreatingWorkspaceFile, refreshWorkspaceFiles, workspaceFiles],
+    [refreshWorkspaceFiles],
   );
 
-  const handleCreateMarkdown = useCallback(() => {
-    void createWorkspaceFile({
-      promptMessage: 'Enter a relative path for your new markdown file:',
-      defaultPath: 'notes/new-note.md',
-      template: '# New note\n\n',
-      ensureExtension: ['.md', '.markdown'],
-    });
-  }, [createWorkspaceFile]);
+  const handleCreateFile = useCallback(
+    ({ path, type }: { path: string; type: 'markdown' | 'text' | 'csv' }) => {
+      if (isCreatingWorkspaceFile) {
+        return;
+      }
 
-  const handleCreateTextFile = useCallback(() => {
-    void createWorkspaceFile({
-      promptMessage:
-        'Enter a relative path for your new text or CSV file (e.g. data/plan.csv):',
-      defaultPath: 'data/new-file.csv',
-      template: '',
-    });
-  }, [createWorkspaceFile]);
+      const trimmedPath = path.trim();
+      if (!trimmedPath) {
+        setWorkspaceStatusMessage('File name cannot be empty');
+        return;
+      }
+
+      if (trimmedPath.startsWith('/') || trimmedPath.includes('..')) {
+        console.warn(
+          'Workspace file creation aborted: path must stay inside runtime/my-computer',
+        );
+        setWorkspaceStatusMessage('Path must stay inside runtime/my-computer');
+        return;
+      }
+
+      const ensureExtension = (candidate: string, extension: string) => {
+        const normalizedExtension = extension.toLowerCase();
+        if (candidate.toLowerCase().endsWith(normalizedExtension)) {
+          return candidate;
+        }
+        if (/[.][a-z0-9]+$/i.test(candidate)) {
+          return candidate.replace(/[.][a-z0-9]+$/i, extension);
+        }
+        return `${candidate}${extension}`;
+      };
+
+      let targetPath = trimmedPath;
+      let template = '';
+
+      if (type === 'markdown') {
+        targetPath = ensureExtension(trimmedPath, '.md');
+        template = '# New note\n\n';
+      } else if (type === 'csv') {
+        targetPath = ensureExtension(trimmedPath, '.csv');
+        template = 'column_1,column_2\n';
+      } else {
+        if (!/[.][a-z0-9]+$/i.test(trimmedPath)) {
+          targetPath = `${trimmedPath}.txt`;
+        }
+      }
+
+      const existing = workspaceFiles.find((file) => file.path === targetPath);
+      if (existing) {
+        const shouldOverwrite = window.confirm(
+          `${targetPath} already exists. Do you want to overwrite it?`,
+        );
+        if (!shouldOverwrite) {
+          return;
+        }
+      }
+
+      void createWorkspaceFile({ targetPath, template });
+    },
+    [createWorkspaceFile, isCreatingWorkspaceFile, workspaceFiles],
+  );
+
+  const handleDeleteFile = useCallback(
+    async (file: WorkspaceFile) => {
+      const confirmation = window.confirm(
+        `Delete ${file.name}? This removes it from runtime/my-computer/ for everyone.`,
+      );
+      if (!confirmation) {
+        return;
+      }
+
+      try {
+        const response = await requestJson<WorkspaceFileDeleteResponse>(
+          '/api/files',
+          {
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ path: file.path }),
+          },
+        );
+
+        if (response.success === false) {
+          throw new Error(response.error || 'Failed to delete');
+        }
+
+        setWorkspaceStatusMessage(`Deleted ${file.name}`);
+        await refreshWorkspaceFiles();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.error('Unable to delete workspace file:', message);
+        setWorkspaceStatusMessage(`Failed to delete ${file.name}`);
+      }
+    },
+    [refreshWorkspaceFiles],
+  );
 
   const handleOpenMyComputer = useCallback(() => {
     openStaticWindow({
@@ -381,20 +407,19 @@ function App() {
           isLoading={workspaceLoading}
           error={workspaceError}
           onOpenFile={handleOpenFile}
-          onCreateMarkdown={handleCreateMarkdown}
-          onCreateTextFile={handleCreateTextFile}
-          onRefresh={handleRefreshWorkspace}
+          onCreateFile={handleCreateFile}
+          onDeleteFile={handleDeleteFile}
           statusMessage={workspaceStatusMessage}
           disableActions={isCreatingWorkspaceFile}
+          isCreatingFile={isCreatingWorkspaceFile}
         />
       ),
       position: { x: 240, y: 150 },
     });
   }, [
     handleOpenFile,
-    handleCreateMarkdown,
-    handleCreateTextFile,
-    handleRefreshWorkspace,
+    handleCreateFile,
+    handleDeleteFile,
     openStaticWindow,
     isCreatingWorkspaceFile,
     workspaceStatusMessage,
@@ -642,11 +667,11 @@ function App() {
                 isLoading={workspaceLoading}
                 error={workspaceError}
                 onOpenFile={handleOpenFile}
-                onCreateMarkdown={handleCreateMarkdown}
-                onCreateTextFile={handleCreateTextFile}
-                onRefresh={handleRefreshWorkspace}
+                onCreateFile={handleCreateFile}
+                onDeleteFile={handleDeleteFile}
                 statusMessage={workspaceStatusMessage}
                 disableActions={isCreatingWorkspaceFile}
+                isCreatingFile={isCreatingWorkspaceFile}
               />
             ),
           };
@@ -712,9 +737,8 @@ function App() {
     });
   }, [
     handleOpenFile,
-    handleCreateMarkdown,
-    handleCreateTextFile,
-    handleRefreshWorkspace,
+    handleCreateFile,
+    handleDeleteFile,
     refreshWorkspaceFiles,
     isCreatingWorkspaceFile,
     workspaceStatusMessage,

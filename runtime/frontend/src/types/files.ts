@@ -20,6 +20,11 @@ export interface WorkspaceFileListResponse {
   error?: string;
 }
 
+export interface WorkspaceFileDeleteResponse {
+  success: boolean;
+  error?: string;
+}
+
 export interface WorkspaceFileContentResponse {
   success: boolean;
   content: string;

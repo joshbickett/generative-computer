@@ -23,6 +23,13 @@ function buildUrl(base: string, path: string): string {
   return `${base}${normalizedPath}`;
 }
 
+type ApiRequestError = Error & {
+  status?: number;
+  statusText?: string;
+  url?: string;
+  responseText?: string;
+};
+
 async function attemptRequest(
   url: string,
   init: RequestInit,
@@ -31,9 +38,14 @@ async function attemptRequest(
   const text = await response.text();
 
   if (!response.ok) {
-    throw new Error(
+    const error = new Error(
       `Request to ${url} failed with ${response.status} ${response.statusText}: ${text.slice(0, 120)}`,
-    );
+    ) as ApiRequestError;
+    error.status = response.status;
+    error.statusText = response.statusText;
+    error.url = url;
+    error.responseText = text;
+    throw error;
   }
 
   try {
@@ -80,8 +92,17 @@ export async function requestJson<T = unknown>(
       const { data } = await attemptRequest(url, init);
       return data as T;
     } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-      if (!allowRetry) {
+      const requestError: ApiRequestError =
+        error instanceof Error
+          ? (error as ApiRequestError)
+          : new Error(String(error));
+
+      lastError = requestError;
+
+      const status = requestError.status;
+      const canTryNextBase = allowRetry || (status === 404 && base === '');
+
+      if (!canTryNextBase) {
         break;
       }
     }

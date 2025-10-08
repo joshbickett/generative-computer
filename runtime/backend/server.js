@@ -300,6 +300,41 @@ app.get('/api/files/content', async (req, res) => {
   }
 });
 
+app.delete('/api/files', async (req, res) => {
+  const rawPath = typeof req.body?.path === 'string' ? req.body.path : '';
+  const relativePath = rawPath.trim();
+
+  if (!relativePath) {
+    res.status(400).json({ success: false, error: 'Missing file path' });
+    return;
+  }
+
+  try {
+    await ensureWorkspaceDefaults();
+    const filePath = resolveWorkspacePath(relativePath);
+    const stats = await fs.stat(filePath);
+
+    if (!stats.isFile()) {
+      res
+        .status(400)
+        .json({ success: false, error: 'Path does not point to a file' });
+      return;
+    }
+
+    await fs.unlink(filePath);
+    res.json({ success: true });
+  } catch (error) {
+    console.error(`Unable to delete workspace file "${relativePath}":`, error);
+    if (error?.code === 'ENOENT') {
+      res
+        .status(404)
+        .json({ success: false, error: `File not found: ${relativePath}` });
+      return;
+    }
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 app.put('/api/files/content', async (req, res) => {
   const rawPath = typeof req.body?.path === 'string' ? req.body.path : '';
   const relativePath = rawPath.trim();

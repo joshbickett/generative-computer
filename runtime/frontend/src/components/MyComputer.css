@@ -39,6 +39,73 @@
   justify-content: flex-end;
 }
 
+.my-computer__creator {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(103, 123, 220, 0.08);
+  border: 1px solid rgba(89, 105, 185, 0.18);
+}
+
+.my-computer__creator-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.my-computer__creator-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 220px;
+  flex: 1 1 220px;
+}
+
+.my-computer__creator-label {
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: rgba(35, 43, 86, 0.9);
+}
+
+.my-computer__creator-input,
+.my-computer__creator-select {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid rgba(70, 82, 140, 0.24);
+  padding: 8px 12px;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #1d2340;
+}
+
+.my-computer__creator-input:focus-visible,
+.my-computer__creator-select:focus-visible {
+  outline: 2px solid rgba(86, 110, 210, 0.6);
+  outline-offset: 2px;
+}
+
+.my-computer__creator-hint {
+  margin: 0;
+  font-size: 12px;
+  color: rgba(40, 49, 92, 0.75);
+}
+
+.my-computer__creator-error {
+  margin: 0;
+  font-size: 12px;
+  color: #a13a3a;
+}
+
+.my-computer__creator-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .my-computer__button {
   padding: 6px 14px;
   border-radius: 8px;
@@ -63,13 +130,26 @@
   outline: none;
 }
 
-.my-computer__button--secondary {
-  background: linear-gradient(135deg, rgba(247, 249, 255, 0.9), rgba(215, 226, 255, 0.9));
+.my-computer__button--ghost {
+  border-color: rgba(67, 78, 140, 0.18);
+  background: rgba(255, 255, 255, 0.85);
+  color: rgba(35, 43, 86, 0.85);
 }
 
-.my-computer__button--secondary:not(:disabled):hover,
-.my-computer__button--secondary:not(:disabled):focus-visible {
-  background: linear-gradient(135deg, rgba(235, 241, 255, 0.95), rgba(200, 214, 255, 0.95));
+.my-computer__button--ghost:not(:disabled):hover,
+.my-computer__button--ghost:not(:disabled):focus-visible {
+  background: rgba(243, 245, 255, 0.95);
+}
+
+.my-computer__button--accent {
+  background: linear-gradient(135deg, #5561ff, #0abec9);
+  border: none;
+  color: #ffffff;
+}
+
+.my-computer__button--accent:not(:disabled):hover,
+.my-computer__button--accent:not(:disabled):focus-visible {
+  background: linear-gradient(135deg, #8069ff, #11d9ee);
 }
 
 .my-computer__status {
@@ -114,24 +194,57 @@
 .my-computer__file {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
+  gap: 8px;
   padding: 12px;
   border-radius: 10px;
   background: rgba(103, 123, 220, 0.08);
   border: 1px solid rgba(89, 105, 185, 0.18);
   color: inherit;
-  cursor: pointer;
   transition: transform 0.1s ease, box-shadow 0.15s ease, background 0.2s ease;
-  text-align: left;
 }
 
 .my-computer__file:hover,
-.my-computer__file:focus-visible {
+.my-computer__file:focus-within {
   outline: none;
   transform: translateY(-1px);
   box-shadow: 0 12px 18px rgba(60, 72, 160, 0.25);
   background: rgba(103, 123, 220, 0.16);
+}
+
+.my-computer__file-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.my-computer__file-main:focus-visible {
+  outline: 2px solid rgba(86, 110, 210, 0.6);
+  outline-offset: 2px;
+}
+
+.my-computer__file-delete {
+  align-self: flex-end;
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(163, 53, 53, 0.3);
+  background: rgba(211, 72, 72, 0.12);
+  color: #a12626;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.my-computer__file-delete:hover,
+.my-computer__file-delete:focus-visible {
+  background: rgba(211, 72, 72, 0.22);
+  transform: translateY(-1px);
 }
 
 .my-computer__icon {

@@ -57,3 +57,4 @@ logs/
 
 # Shared workspace files created at runtime
 runtime/my-computer/
+.eslintcache
