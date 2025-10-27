@@ -92,3 +92,55 @@ body, html {
 .video-window__caption a:focus-visible {
   text-decoration: underline;
 }
+
+.error-window {
+  padding: 16px;
+}
+
+.error-window h3 {
+  color: #c93434;
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+.error-window p {
+  color: #444;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.error-window-details {
+  background: rgba(201, 52, 52, 0.12);
+  border: 1px solid rgba(201, 52, 52, 0.2);
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #333;
+}
+
+.error-window-details strong {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.error-window-details p {
+  font-size: 12px;
+}
+
+.error-window-details p:not(:last-child) {
+  margin-bottom: 8px;
+}
+
+.error-window-details code {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier,
+    monospace;
+  background: rgba(201, 52, 52, 0.1);
+  padding: 2px 4px;
+  border-radius: 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

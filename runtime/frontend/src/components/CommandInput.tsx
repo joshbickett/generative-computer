@@ -80,6 +80,7 @@ export default function CommandInput({
         <div
           className={`command-status-label command-status-label--${statusTone}`}
         >
+          {statusTone === 'pending' && <div className="loading-indicator" />}
           <span>{statusMessage}</span>
           {authError && (
             <span className="command-status-label__error">{authError}</span>
