@@ -284,6 +284,12 @@ CRITICAL CONSTRAINTS:
 4. Never remove, hide, or disable the command input text box rendered by CommandInput.
 5. When embedding multi-line ASCII art or code, wrap it in a <pre> element and call String.raw on the string literal so the JSX remains valid without escape errors.
 
+TOOLS:
+- You have a special "drawing" tool available.
+- If the user asks to draw something, use the drawing tool.
+- The tool takes a list of drawing commands.
+- Schema: { tool: 'drawing', commands: [{ shape: 'line' | 'circle' | 'rectangle', color: string (hex), positions: [x, y, x2, y2, ...] }] }
+
 REQUEST:
 The user said: "${userCommand}".
 Translate this into a compelling end product in GeneratedContent.tsx only. Remember you can create anything that can be rendered in a browser!
@@ -325,6 +331,8 @@ Please apply the requested update and include DONE at the very end.`;
     promptWithContext,
     '--output-format',
     'json',
+    '--tools',
+    'drawing',
   ];
 
   return new Promise((resolve, reject) => {

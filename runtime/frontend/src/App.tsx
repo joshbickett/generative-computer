@@ -10,7 +10,7 @@ import type { WindowData } from './components/Desktop';
 import CommandInput from './components/CommandInput';
 import GeneratedContent from './components/GeneratedContent';
 import GeminiStatsWindow from './components/GeminiStatsWindow';
-import DrawingPadApp from './components/DrawingPadApp';
+import DrawingPadApp, { type DrawingCommand } from './components/DrawingPadApp';
 import './App.css';
 
 const API_BASE_URL = 'http://localhost:3001';
@@ -97,21 +97,32 @@ function App() {
     return () => clearInterval(interval);
   }, [refreshStatus]);
 
-  const createCommandWindow = useCallback((request: string) => {
-    const newWindow: WindowData = {
-      id: `window-${Date.now()}`,
-      title: `Request: ${truncate(request, 24)}`,
-      content: (
-        <div>
-          <h3>Preview</h3>
-          <p>Request: {request}</p>
-          <p>Gemini will replace this window with a tailored experience.</p>
-        </div>
-      ),
-    };
-
-    setWindows((prev) => [...prev, newWindow]);
-  }, []);
+  const createErrorWindow = useCallback(
+    (request: string, errorMessage: string) => {
+      const newWindow: WindowData = {
+        id: `error-window-${Date.now()}`,
+        title: `Error: ${truncate(request, 24)}`,
+        content: (
+          <div className="error-window">
+            <h3>Agent Request Failed</h3>
+            <p>Your request could not be completed. See details below.</p>
+            <div className="error-window-details">
+              <strong>Command:</strong>
+              <p>
+                <code>{request}</code>
+              </p>
+              <strong>Error:</strong>
+              <p>
+                <code>{errorMessage}</code>
+              </p>
+            </div>
+          </div>
+        ),
+      };
+      setWindows((prev) => [...prev, newWindow]);
+    },
+    [],
+  );
 
   const handleCloseWindow = useCallback((id: string) => {
     setWindows((prev) => prev.filter((window) => window.id !== id));
@@ -187,14 +198,17 @@ function App() {
     });
   }, [openStaticWindow]);
 
-  const handleOpenDrawingPad = useCallback(() => {
-    openStaticWindow({
-      id: 'drawing-pad',
-      title: 'Neon Sketch',
-      content: <DrawingPadApp />,
-      position: { x: 520, y: 160 },
-    });
-  }, [openStaticWindow]);
+  const handleOpenDrawingPad = useCallback(
+    (initialCommands?: DrawingCommand[]) => {
+      openStaticWindow({
+        id: 'drawing-pad',
+        title: 'Neon Sketch',
+        content: <DrawingPadApp initialCommands={initialCommands} />,
+        position: { x: 520, y: 160 },
+      });
+    },
+    [openStaticWindow],
+  );
 
   const handleOpenUsageStats = useCallback(() => {
     openStaticWindow({
@@ -236,6 +250,20 @@ function App() {
         const mode =
           (data.mode as AgentMode) ?? agentStatus.agentMode ?? 'UNKNOWN';
 
+        if (data.result?.output) {
+          try {
+            const agentJson = JSON.parse(data.result.output);
+            if (
+              agentJson.tool === 'drawing' &&
+              Array.isArray(agentJson.commands)
+            ) {
+              handleOpenDrawingPad(agentJson.commands);
+            }
+          } catch (e) {
+            console.warn('Could not parse agent JSON output', e);
+          }
+        }
+
         setLastActivity({
           command,
           message: data.message || 'Command processed.',
@@ -259,14 +287,19 @@ function App() {
               : null,
           timestamp: Date.now(),
         });
-        createCommandWindow(command);
+        createErrorWindow(command, message);
       } finally {
         setIsProcessing(false);
         setPendingCommand(null);
         refreshStatus();
       }
     },
-    [agentStatus.agentMode, createCommandWindow, refreshStatus],
+    [
+      agentStatus.agentMode,
+      createErrorWindow,
+      handleOpenDrawingPad,
+      refreshStatus,
+    ],
   );
 
   const commandHint = useMemo(() => {
